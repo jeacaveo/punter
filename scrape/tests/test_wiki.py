@@ -1,4 +1,5 @@
 """ Test for scrape.wiki module. """
+import os
 import unittest
 from mock import (
     MagicMock,
@@ -7,6 +8,7 @@ from mock import (
 
 from scrape.wiki import (
     clean,
+    export_units_json,
     get_content,
     unit_table_to_dict,
     )
@@ -211,3 +213,52 @@ class UnitTableToDictTests(unittest.TestCase):
         soup_mock.return_value.table.assert_called_once_with("tr")
         row_mock.assert_called_once_with("td")
         clean_mock.assert_has_calls([])
+
+
+class ExportUnitsJsonTests(unittest.TestCase):
+    """ Tests for scrape.wiki.export_units_json. """
+
+    def setUp(self):
+        self.file_name = "units.json.test"
+
+    def tearDown(self):
+        if os.path.isfile(self.file_name):
+            os.remove(self.file_name)
+
+    def test_success(self):
+        """ Tests file is saved when invalid format is provided. """
+        # Given
+        data = {
+            "name": {
+                "url_path": "/name",
+                "cost": {
+                    "gold": 3,
+                    "energy": 4,
+                    "green": 5,
+                    "blue": 6,
+                    "red": 7,
+                    },
+                "attack": 15,
+                "health": 10,
+                "supply": 8,
+                "frontline": True,
+                "fragile": False,
+                "blocker": True,
+                "prompt": False,
+                "stamina": 16,
+                "lifespan": 19,
+                "build_time": 9,
+                "exhaust_turn": 17,
+                "exhaust_ability": 18,
+                "type": 1,
+                "unit_spell": "unit/spell",
+                }
+            }
+        expected_result = True, {"message": "Success"}
+
+        # When
+        result = export_units_json(data, file_name=self.file_name)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        self.assertTrue(os.path.isfile(self.file_name))

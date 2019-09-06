@@ -1,4 +1,5 @@
 """ Module for scraping prismata.gamepedia.com """
+import json
 import requests
 
 from bs4 import BeautifulSoup
@@ -128,3 +129,61 @@ def unit_table_to_dict(data):
                 "unit_spell": clean(unit[2]),
                 }
     return True, result
+
+
+def export_units_json(data, file_name="units.json"):
+    """
+    Save data into .json file.
+
+    Parameters
+    ----------
+    data : dict
+        Data to export. See Example for expected format.
+
+    Returns
+    -------
+    bool, dict
+
+    Example
+    -------
+    input:
+        {
+            "Unit Name":
+                {
+                    "url": "/Unit_Name",
+                    "cost": {
+                        "gold": 1,
+                        "energy": 0,
+                        "green": 1,
+                        "blue": 0,
+                        "red": 1,
+                        },
+                    "attack": 1,
+                    "health": 1,
+                    "supply": 1,
+                    "frontline": True,
+                    "fragile": False,
+                    "blocker": True,
+                    "prompt": False,
+                    "stamina": 0,
+                    "lifespan": 0,
+                    "build_time": 0,
+                    "exhaust_turn": 0,
+                    "exhaust_ability": 0,
+                    "type": 1,
+                    "unit_spell": "Unit|Spell",
+                },
+            ...
+        }
+
+    output:
+    False, {"message": "Error message"}
+    True, {"message": "Success message"}
+
+    """
+    data_json = json.dumps(
+        data, sort_keys=True, indent=4, separators=(",", ": "))
+
+    with open(file_name, "w") as out_file:
+        out_file.write(data_json)
+    return True, {"message": "Success"}
