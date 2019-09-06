@@ -6,7 +6,9 @@ from mock import (
     )
 
 from scrape.wiki import (
+    clean,
     get_content,
+    unit_table_to_dict,
     )
 
 
@@ -47,3 +49,165 @@ class GetContentTests(unittest.TestCase):
         # Then
         self.assertEqual(result, expected_result)
         requests_mock.assert_called_once_with(url)
+
+
+class CleanTests(unittest.TestCase):
+    """ Tests for scrape.wiki.clean. """
+
+    def test_div(self):
+        """ Tests result when input data has a div value. """
+        # Given
+        data = MagicMock(div=MagicMock(text="abc"))
+        expected_result = "abc"
+
+        # When
+        result = clean(data)
+
+        # Then
+        self.assertEqual(result, expected_result)
+
+    def test_int(self):
+        """ Tests result when input data is a string number. """
+        # Given
+        data = MagicMock(div=None, text=" \n 999 \n ")
+        expected_result = 999
+
+        # When
+        result = clean(data, int)
+
+        # Then
+        self.assertEqual(result, expected_result)
+
+
+class UnitTableToDictTests(unittest.TestCase):
+    """ Tests for scrape.wiki.unit_table_to_dict. """
+
+    @patch("scrape.wiki.BeautifulSoup")
+    def test_invalid_input_format(self, soup_mock):
+        """ Tests result when input data has invalid format. """
+        # Given
+        data = ""
+        expected_result = False, {"message": "Invalid format."}
+
+        soup_mock.return_value = None
+
+        # When
+        result = unit_table_to_dict(data)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        soup_mock.assert_called_once_with(data, "html.parser")
+
+    @patch("scrape.wiki.BeautifulSoup")
+    def test_empty_rows(self, soup_mock):
+        """ Tests result when input data has valid format but now rows. """
+        # Given
+        data = "<html><table></table></html>"
+        expected_dict = {}
+        expected_result = True, expected_dict
+
+        row_mock = MagicMock()
+        soup_mock.return_value = MagicMock()
+        soup_mock.return_value.table.return_value = [row_mock]
+        row_mock.return_value = None
+
+        # When
+        result = unit_table_to_dict(data)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        soup_mock.assert_called_once_with(data, "html.parser")
+        soup_mock.return_value.table.assert_called_once_with("tr")
+        row_mock.assert_called_once_with("td")
+
+    @patch("scrape.wiki.clean")
+    @patch("scrape.wiki.BeautifulSoup")
+    def test_valid_input_format(self, soup_mock, clean_mock):
+        """ Tests result when input data has valid format. """
+        # Given
+        data = "<html><table>...valid rows/columns...</table></html>"
+        expected_dict = {
+            "name": {
+                "url_path": "/name",
+                "cost": {
+                    "gold": 3,
+                    "energy": 4,
+                    "green": 5,
+                    "blue": 6,
+                    "red": 7,
+                    },
+                "attack": 15,
+                "health": 10,
+                "supply": 8,
+                "frontline": True,
+                "fragile": False,
+                "blocker": True,
+                "prompt": False,
+                "stamina": 16,
+                "lifespan": 19,
+                "build_time": 9,
+                "exhaust_turn": 17,
+                "exhaust_ability": 18,
+                "type": 1,
+                "unit_spell": "unit/spell",
+                }
+            }
+        expected_result = True, expected_dict
+
+        row_mock = MagicMock()
+        soup_mock.return_value = MagicMock()
+        soup_mock.return_value.table.return_value = [row_mock]
+        row_mock.return_value = [
+            MagicMock(a={"href": "/name"}),
+            "1",
+            "unit/spell",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "True",
+            "",
+            "True",
+            "",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            ]
+        clean_mock.side_effect = [
+            3,
+            4,
+            5,
+            6,
+            7,
+            "15",
+            10,
+            8,
+            True,
+            False,
+            True,
+            False,
+            16,
+            19,
+            9,
+            17,
+            18,
+            1,
+            "unit/spell",
+            "name",  # For some reason index 0 needs to be a the end?
+            ]
+
+        # When
+        result = unit_table_to_dict(data)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        soup_mock.assert_called_once_with(data, "html.parser")
+        soup_mock.return_value.table.assert_called_once_with("tr")
+        row_mock.assert_called_once_with("td")
+        clean_mock.assert_has_calls([])
