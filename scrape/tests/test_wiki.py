@@ -275,6 +275,45 @@ class ExportUnitsCsvTests(unittest.TestCase):
         if os.path.isfile(self.file_name):
             os.remove(self.file_name)
 
+    def test_format_index(self):
+        """ Tests error when empty data is provided. """
+        # Given
+        data = {}
+        expected_result = False, {"message": "No data provided."}
+
+        # When
+        result = export_units_csv(data, file_name=self.file_name)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        self.assertTrue(os.path.isfile(self.file_name))
+
+    def test_format_attribute(self):
+        """ Tests error when invalid data format is provided. """
+        # Given
+        data = {"bad": "wrong"}
+        expected_result = False, {"message": "Invalid format (nested data)."}
+
+        # When
+        result = export_units_csv(data, file_name=self.file_name)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        self.assertFalse(os.path.isfile(self.file_name))
+
+    def test_invalid_key(self):
+        """ Tests error when invalid data format is provided. """
+        # Given
+        data = {"bad": {}}
+        expected_result = False, {"message": "Invalid format (missing key)."}
+
+        # When
+        result = export_units_csv(data, file_name=self.file_name)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        self.assertFalse(os.path.isfile(self.file_name))
+
     def test_success(self):
         """ Tests csv file is saved when valid format is provided. """
         # Given

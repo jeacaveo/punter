@@ -240,17 +240,24 @@ def export_units_csv(data, file_name="units.csv"):
     True, {"message": "Success message"}
 
     """
-    flat_data_list = []
-    for key, val in data.items():
-        unit = {"name": key}
-        unit.update(val.pop("cost"))
-        unit.update(val)
-        flat_data_list.append(unit)
+    try:
+        flat_data_list = []
+        for key, val in data.items():
+            unit = {"name": key}
+            unit.update(val.pop("cost"))
+            unit.update(val)
+            flat_data_list.append(unit)
 
-    with open(file_name, "w") as out_file:
-        headers = flat_data_list[0].keys()
-        writer = csv.DictWriter(out_file, fieldnames=headers)
-        writer.writeheader()
-        for unit in flat_data_list:
-            writer.writerow(unit)
+        with open(file_name, "w") as out_file:
+            headers = flat_data_list[0].keys()
+            writer = csv.DictWriter(out_file, fieldnames=headers)
+            writer.writeheader()
+            for unit in flat_data_list:
+                writer.writerow(unit)
+    except IndexError:
+        return False, {"message": "No data provided."}
+    except AttributeError:
+        return False, {"message": "Invalid format (nested data)."}
+    except KeyError:
+        return False, {"message": "Invalid format (missing key)."}
     return True, {"message": "Success"}
