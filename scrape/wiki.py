@@ -51,7 +51,7 @@ def clean(value, cast=str):
 
 def unit_table_to_dict(data):
     """
-    Parse HTML table from prismata.gamepedia.com into dict format.
+    Parse HTML unit table from prismata.gamepedia.com into dict format.
 
     Parameters
     ----------
@@ -61,7 +61,7 @@ def unit_table_to_dict(data):
     Returns
     -------
     dict
-        Unit information
+        Units information
 
     Example
     -------
@@ -69,26 +69,33 @@ def unit_table_to_dict(data):
         {
             "Unit Name":
                 {
-                    "url": "/Unit_Name",
-                    "cost": {
+                    "name": "Unit Name",
+                    "costs": {
                         "gold": 1,
                         "energy": 0,
                         "green": 1,
                         "blue": 0,
                         "red": 1,
                         },
-                    "attack": 1,
-                    "health": 1,
-                    "supply": 1,
-                    "frontline": True,
-                    "fragile": False,
-                    "blocker": True,
-                    "prompt": False,
-                    "stamina": 0,
-                    "lifespan": 0,
-                    "build_time": 0,
-                    "exhaust_turn": 0,
-                    "exhaust_ability": 0,
+                    "stats": {
+                        "attack": 1,
+                        "health": 1,
+                        },
+                    "attributes": {
+                        "supply": 1,
+                        "frontline": True,
+                        "fragile": False,
+                        "blocker": True,
+                        "prompt": False,
+                        "stamina": 0,
+                        "lifespan": 0,
+                        "build_time": 0,
+                        "exhaust_turn": 0,
+                        "exhaust_ability": 0,
+                        },
+                    "links": {
+                        "path": "/Unit_Name",
+                        },
                     "type": 1,
                     "unit_spell": "Unit|Spell",
                 },
@@ -105,27 +112,35 @@ def unit_table_to_dict(data):
     for row in soup.table("tr"):
         unit = row("td")
         if unit:
-            result[clean(unit[0])] = {
-                "url_path": unit[0].a.get("href"),
-                "cost": {
+            name = clean(unit[0])
+            result[name] = {
+                "name": name,
+                "costs": {
                     "gold": clean(unit[3], int),
                     "energy": clean(unit[4], int),
                     "green": clean(unit[5], int),
                     "blue": clean(unit[6], int),
                     "red": clean(unit[7], int),
                     },
-                "attack": int(clean(unit[15]) or 0),
-                "health": clean(unit[10], int),
-                "supply": clean(unit[8], int),
-                "frontline": clean(unit[11], bool),
-                "fragile": clean(unit[12], bool),
-                "blocker": clean(unit[13], bool),
-                "prompt": clean(unit[14], bool),
-                "stamina": clean(unit[16], int),
-                "lifespan": clean(unit[19], int),
-                "build_time": clean(unit[9], int),
-                "exhaust_turn": clean(unit[17], int),
-                "exhaust_ability": clean(unit[18], int),
+                "stats" : {
+                    "attack": int(clean(unit[15]) or 0),
+                    "health": clean(unit[10], int),
+                    },
+                "attributes": {
+                    "supply": clean(unit[8], int),
+                    "frontline": clean(unit[11], bool),
+                    "fragile": clean(unit[12], bool),
+                    "blocker": clean(unit[13], bool),
+                    "prompt": clean(unit[14], bool),
+                    "stamina": clean(unit[16], int),
+                    "lifespan": clean(unit[19], int),
+                    "build_time": clean(unit[9], int),
+                    "exhaust_turn": clean(unit[17], int),
+                    "exhaust_ability": clean(unit[18], int),
+                    },
+                "links": {
+                    "path": unit[0].a.get("href"),
+                    },
                 "type": clean(unit[1], int),
                 "unit_spell": clean(unit[2]),
                 }
@@ -151,26 +166,33 @@ def export_units_json(data, file_name="units.json"):
         {
             "Unit Name":
                 {
-                    "url": "/Unit_Name",
-                    "cost": {
+                    "name": "Unit name",
+                    "costs": {
                         "gold": 1,
                         "energy": 0,
                         "green": 1,
                         "blue": 0,
                         "red": 1,
                         },
-                    "attack": 1,
-                    "health": 1,
-                    "supply": 1,
-                    "frontline": True,
-                    "fragile": False,
-                    "blocker": True,
-                    "prompt": False,
-                    "stamina": 0,
-                    "lifespan": 0,
-                    "build_time": 0,
-                    "exhaust_turn": 0,
-                    "exhaust_ability": 0,
+                    "stats": {
+                        "attack": 1,
+                        "health": 1,
+                        },
+                    "attributes": {
+                        "supply": 1,
+                        "frontline": True,
+                        "fragile": False,
+                        "blocker": True,
+                        "prompt": False,
+                        "stamina": 0,
+                        "lifespan": 0,
+                        "build_time": 0,
+                        "exhaust_turn": 0,
+                        "exhaust_ability": 0,
+                        },
+                    "links": {
+                        "path": "/Unit_Name",
+                        },
                     "type": 1,
                     "unit_spell": "Unit|Spell",
                 },
@@ -209,8 +231,8 @@ def export_units_csv(data, file_name="units.csv"):
         {
             "Unit Name":
                 {
-                    "url": "/Unit_Name",
-                    "cost": {
+                    "path": "/Unit_Name",
+                    "costs": {
                         "gold": 1,
                         "energy": 0,
                         "green": 1,
@@ -244,7 +266,7 @@ def export_units_csv(data, file_name="units.csv"):
         flat_data_list = []
         for key, val in data.items():
             unit = {"name": key}
-            unit.update(val.pop("cost"))
+            unit.update(val.pop("costs"))
             unit.update(val)
             flat_data_list.append(unit)
 

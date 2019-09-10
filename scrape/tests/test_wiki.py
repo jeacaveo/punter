@@ -103,7 +103,7 @@ class UnitTableToDictTests(unittest.TestCase):
 
     @patch("scrape.wiki.BeautifulSoup")
     def test_empty_rows(self, soup_mock):
-        """ Tests result when input data has valid format but now rows. """
+        """ Tests result when input data has valid format but no rows. """
         # Given
         data = "<html><table></table></html>"
         expected_dict = {}
@@ -131,26 +131,33 @@ class UnitTableToDictTests(unittest.TestCase):
         data = "<html><table>...valid rows/columns...</table></html>"
         expected_dict = {
             "name": {
-                "url_path": "/name",
-                "cost": {
+                "name": "name",
+                "costs": {
                     "gold": 3,
                     "energy": 4,
                     "green": 5,
                     "blue": 6,
                     "red": 7,
                     },
-                "attack": 15,
-                "health": 10,
-                "supply": 8,
-                "frontline": True,
-                "fragile": False,
-                "blocker": True,
-                "prompt": False,
-                "stamina": 16,
-                "lifespan": 19,
-                "build_time": 9,
-                "exhaust_turn": 17,
-                "exhaust_ability": 18,
+                "stats": {
+                    "attack": 15,
+                    "health": 10,
+                    },
+                "attributes": {
+                    "supply": 8,
+                    "frontline": True,
+                    "fragile": False,
+                    "blocker": True,
+                    "prompt": False,
+                    "stamina": 16,
+                    "lifespan": 19,
+                    "build_time": 9,
+                    "exhaust_turn": 17,
+                    "exhaust_ability": 18,
+                    },
+                "links": {
+                    "path": "/name",
+                    },
                 "type": 1,
                 "unit_spell": "unit/spell",
                 }
@@ -183,6 +190,7 @@ class UnitTableToDictTests(unittest.TestCase):
             "19",
             ]
         clean_mock.side_effect = [
+            "name",
             3,
             4,
             5,
@@ -202,7 +210,6 @@ class UnitTableToDictTests(unittest.TestCase):
             18,
             1,
             "unit/spell",
-            "name",  # For some reason index 0 needs to be a the end?
             ]
 
         # When
@@ -231,26 +238,33 @@ class ExportUnitsJsonTests(unittest.TestCase):
         # Given
         data = {
             "name": {
-                "url_path": "/name",
-                "cost": {
+                "name": "name",
+                "costs": {
                     "gold": 3,
                     "energy": 4,
                     "green": 5,
                     "blue": 6,
                     "red": 7,
                     },
-                "attack": 15,
-                "health": 10,
-                "supply": 8,
-                "frontline": True,
-                "fragile": False,
-                "blocker": True,
-                "prompt": False,
-                "stamina": 16,
-                "lifespan": 19,
-                "build_time": 9,
-                "exhaust_turn": 17,
-                "exhaust_ability": 18,
+                "stats": {
+                    "attack": 15,
+                    "health": 10,
+                    },
+                "attributes": {
+                    "supply": 8,
+                    "frontline": True,
+                    "fragile": False,
+                    "blocker": True,
+                    "prompt": False,
+                    "stamina": 16,
+                    "lifespan": 19,
+                    "build_time": 9,
+                    "exhaust_turn": 17,
+                    "exhaust_ability": 18,
+                    },
+                "links": {
+                    "path": "/name",
+                    },
                 "type": 1,
                 "unit_spell": "unit/spell",
                 }
@@ -319,26 +333,33 @@ class ExportUnitsCsvTests(unittest.TestCase):
         # Given
         data = {
             "name": {
-                "url_path": "/name",
-                "cost": {
+                "name": "name",
+                "costs": {
                     "gold": 3,
                     "energy": 4,
                     "green": 5,
                     "blue": 6,
                     "red": 7,
                     },
-                "attack": 15,
-                "health": 10,
-                "supply": 8,
-                "frontline": True,
-                "fragile": False,
-                "blocker": True,
-                "prompt": False,
-                "stamina": 16,
-                "lifespan": 19,
-                "build_time": 9,
-                "exhaust_turn": 17,
-                "exhaust_ability": 18,
+                "stats": {
+                    "attack": 15,
+                    "health": 10,
+                    },
+                "attributes": {
+                    "supply": 8,
+                    "frontline": True,
+                    "fragile": False,
+                    "blocker": True,
+                    "prompt": False,
+                    "stamina": 16,
+                    "lifespan": 19,
+                    "build_time": 9,
+                    "exhaust_turn": 17,
+                    "exhaust_ability": 18,
+                    },
+                "links": {
+                    "path": "/name",
+                    },
                 "type": 1,
                 "unit_spell": "unit/spell",
                 }
