@@ -6,6 +6,18 @@ import requests
 from bs4 import BeautifulSoup
 
 
+# Mapping from symbol titles into str representation
+TITLE_SYMBOL_MAP = {
+    "Gold": "",
+    "Energy": "E",
+    "Green resource": "G",
+    "Blue resource": "B",
+    "Red resource": "R",
+    "Attack": "X",
+    "Ability": "Click",
+    }
+
+
 def get_content(url):
     """
     Get HTML for URL.
@@ -27,13 +39,13 @@ def get_content(url):
     return ""
 
 
-def clean(value, cast=str):
+def clean(item, cast=str):
     """
-    Clean value provided.
+    Clean item provided.
 
     Parameters
     ----------
-    value : bs4.element.Tag
+    item : bs4.element.Tag
         Tag object from BeautifulSoup4 library.
     cast : function, optional
         Funtion used to cast return into a type. Defaults to str.
@@ -44,9 +56,9 @@ def clean(value, cast=str):
         Returns content of Tag of the type from the cast function.
 
     """
-    if value.div:
-        value = value.div
-    return cast(value.text.strip())
+    if item.div:
+        item = item.div
+    return cast(item.text.strip())
 
 
 def unit_table_to_dict(data):
@@ -122,7 +134,7 @@ def unit_table_to_dict(data):
                     "blue": clean(unit[6], int),
                     "red": clean(unit[7], int),
                     },
-                "stats" : {
+                "stats": {
                     "attack": int(clean(unit[15]) or 0),
                     "health": clean(unit[10], int),
                     },
@@ -145,6 +157,29 @@ def unit_table_to_dict(data):
                 "unit_spell": clean(unit[2]),
                 }
     return True, result
+
+
+def clean_symbols(element):
+    """
+    Change symbol links into text..
+
+    Parameters
+    ----------
+    item : bs4.element.Tag
+        Tag object from BeautifulSoup4 library.
+
+    Returns
+    -------
+    bs4.element.Tag
+        Returns the same element provided as parameter,
+        but with all symbol links replaced.
+
+    """
+    for icon in element("a"):
+        title = icon.get("title")
+        symbol = TITLE_SYMBOL_MAP.get(title, title)
+        icon.replace_with(symbol)
+    return element
 
 
 def export_units_json(data, file_name="units.json"):

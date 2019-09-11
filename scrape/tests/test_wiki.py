@@ -8,6 +8,7 @@ from mock import (
 
 from scrape.wiki import (
     clean,
+    clean_symbols,
     export_units_csv,
     export_units_json,
     get_content,
@@ -372,3 +373,41 @@ class ExportUnitsCsvTests(unittest.TestCase):
         # Then
         self.assertEqual(result, expected_result)
         self.assertTrue(os.path.isfile(self.file_name))
+
+
+class CleanSymbolsTests(unittest.TestCase):
+    """ Tests for scrape.wiki.clean_symbols. """
+
+    def test_no_links(self):
+        """ Tests result when input data has no links (a tag). """
+        # Given
+        tag_obj = MagicMock()
+        expected_result = tag_obj
+
+        tag_obj.return_value = []
+
+        # When
+        result = clean_symbols(tag_obj)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        tag_obj.assert_called_once_with("a")
+
+    def test_links(self):
+        """ Tests result when input data has links (a tag). """
+        # Given
+        tag_obj = MagicMock()
+        icon_obj = MagicMock()
+        expected_result = tag_obj
+
+        tag_obj.return_value = [icon_obj]
+        icon_obj.get.return_value = "Attack"
+
+        # When
+        result = clean_symbols(tag_obj)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        tag_obj.assert_called_once_with("a")
+        icon_obj.get.assert_called_once_with("title")
+        icon_obj.replace_with.assert_called_once_with("X")
