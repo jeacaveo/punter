@@ -8,6 +8,7 @@ from mock import (
 
 from scrape.wiki import (
     clean,
+    clean_changes,
     clean_symbols,
     export_units_csv,
     export_units_json,
@@ -411,3 +412,43 @@ class CleanSymbolsTests(unittest.TestCase):
         tag_obj.assert_called_once_with("a")
         icon_obj.get.assert_called_once_with("title")
         icon_obj.replace_with.assert_called_once_with("X")
+
+
+class CleanChangesTests(unittest.TestCase):
+    """ Tests for scrape.wiki.clean_changes. """
+
+    def test_no_changes(self):
+        """ Tests result when input data has no changes. """
+        # Given
+        tag_obj = MagicMock()
+        expected_result = []
+
+        tag_obj.ul.return_value = []
+
+        # When
+        result = clean_changes(tag_obj)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        tag_obj.ul.assert_called_once_with("li")
+
+    @patch("scrape.wiki.clean_symbols")
+    def test_changes(self, symbols_mock):
+        """ Tests result when input data has changes. """
+        # Given
+        tag_obj = MagicMock()
+        element_obj = MagicMock()
+        expected_result = ["some change"]
+
+        tag_obj.ul.return_value = [element_obj]
+        symbols_mock.return_value = element_obj
+        element_obj.get_text.return_value = " \n some\n change \n "
+
+        # When
+        result = clean_changes(tag_obj)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        tag_obj.ul.assert_called_once_with("li")
+        symbols_mock.assert_called_once_with(element_obj)
+        element_obj.get_text.assert_called_once_with()

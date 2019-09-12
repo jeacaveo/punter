@@ -182,6 +182,29 @@ def clean_symbols(element):
     return element
 
 
+def clean_changes(item):
+    """
+    Clean changes list into readable format.
+
+    Parameters
+    ----------
+    item : bs4.element.Tag
+        Tag object from BeautifulSoup4 library.
+
+    Returns
+    -------
+    list(str)
+        Returns list of changes in string representation.
+
+    """
+    clean_values = []
+    for element in item.ul("li"):
+        element = clean_symbols(element)
+        content = element.get_text().replace("\n", "")
+        clean_values.append(" ".join(content.split()))
+    return clean_values
+
+
 def export_units_json(data, file_name="units.json"):
     """
     Save data into .json format/file.
