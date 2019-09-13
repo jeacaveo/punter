@@ -2,6 +2,7 @@
 import os
 import unittest
 from mock import (
+    call,
     MagicMock,
     patch,
     )
@@ -13,6 +14,7 @@ from scrape.wiki import (
     export_units_csv,
     export_units_json,
     get_content,
+    unit_to_dict,
     unit_table_to_dict,
     )
 
@@ -452,3 +454,108 @@ class CleanChangesTests(unittest.TestCase):
         tag_obj.ul.assert_called_once_with("li")
         symbols_mock.assert_called_once_with(element_obj)
         element_obj.get_text.assert_called_once_with()
+
+
+class UnitToDictTests(unittest.TestCase):
+    """ Tests for scrape.wiki.unit_to_dict. """
+
+    @patch("scrape.wiki.BeautifulSoup")
+    def test_invalid_input_format(self, soup_mock):
+        """ Tests result when input data has invalid format. """
+        # Given
+        data = ""
+        expected_result = False, {"message": "Invalid format."}
+
+        soup_mock.return_value = None
+
+        # When
+        result = unit_to_dict(data)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        soup_mock.assert_called_once_with(data, "html.parser")
+
+    @patch("scrape.wiki.clean_changes")
+    @patch("scrape.wiki.clean_symbols")
+    @patch("scrape.wiki.clean")
+    @patch("scrape.wiki.BeautifulSoup")
+    def test_valid_input_format(
+            self, soup_mock, clean_mock, symbols_mock, changes_mock):
+        """ Tests result when input data has valid format. """
+        # Given
+        data = "<html><table>...valid structure...</table></html>"
+        name = "Unit Name"
+        path = "/Unit_Name"
+        image_url = "https://image.url.com"
+        panel_url = "https://panel.url.com"
+        abilities = ["", "", "Ability1. Ability 2"]
+        expected_dict = {
+            "name": name,
+            "abilities": abilities[2],
+            "change_history": {
+                "day 1": ["change1", "change2"],
+                "day 2": ["change3"],
+                },
+            "links": {
+                "path": path,
+                "image": image_url,
+                "panel": panel_url,
+                },
+            "position": "Middle Far Right",
+            }
+        expected_result = True, expected_dict
+
+        div_box = MagicMock()
+        change_log = MagicMock()
+        changes1 = MagicMock(stripped_strings=("day 1",))
+        changes2 = MagicMock(stripped_strings=("day 2",))
+        ca_view = MagicMock(a={"href": path})
+        thumbimage = {"src": image_url}
+        panelimage = {"src": panel_url}
+        soup_mock.return_value = soup_mock
+        soup_mock.select_one.side_effect = [
+            div_box,
+            change_log,
+            name,
+            ca_view,
+            thumbimage,
+            panelimage,
+            ]
+        clean_mock.return_value = name
+        div_box.return_value = abilities
+        symbols_mock.return_value = symbols_mock
+        symbols_mock.get_text.return_value = abilities[2]
+        change_log.return_value = change_log
+        change_log.find_parent.return_value = change_log
+        change_log.find_next.return_value = change_log
+        change_log.find_all.return_value = [changes1, changes2]
+        changes_mock.side_effect = [
+            ["change1", "change2"],
+            ["change3"],
+            ]
+
+        # When
+        result = unit_to_dict(data)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        soup_mock.assert_called_once_with(data, "html.parser")
+        soup_mock.select_one.assert_has_calls([
+            call("div.box"),
+            call("#Change_log"),
+            call("div.title"),
+            call("#ca-view"),
+            call(".thumbimage"),
+            call("p > a.image > img"),
+            ])
+        div_box.assert_called_once_with("div")
+        change_log.assert_has_calls([
+            call.find_parent("h2"),
+            call.find_next("ul"),
+            call.find_all("li", recursive=False),
+            ])
+        clean_mock.assert_called_once_with(name)
+        symbols_mock.assert_has_calls([
+            call(abilities[2]),
+            call.get_text(),
+            ])

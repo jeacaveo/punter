@@ -205,6 +205,66 @@ def clean_changes(item):
     return clean_values
 
 
+def unit_to_dict(data):
+    """
+    Parse unit HTML from prismata.gamepedia.com into dict format.
+
+    Parameters
+    ----------
+    data : str
+        HTML for unit from prismata.gamepedia.com..
+
+    Returns
+    -------
+    dict
+        Unit information
+
+    Example
+    -------
+    output:
+        {
+            "name": "Unit name",
+            "abilities": "Ability 1. Ability 2",
+            "change_history": {
+                "October 31st, 1984": ["Change 1", "Change 2"],
+                ...
+                },
+            "links": {
+                "path": "/Unit_Name",
+                "image": "https://image.url.com",
+                "panel": "https://panel.url.com",
+                },
+            "position": "Middle Far Right",
+        }
+
+    """
+    soup = BeautifulSoup(data, "html.parser")
+    if not soup:
+        return False, {"message": "Invalid format."}
+
+    abilities = soup.select_one("div.box")("div")[2]
+    change_log = soup.select_one("#Change_log").find_parent(
+        "h2").find_next("ul").find_all("li", recursive=False)
+
+    result = {
+        "name": clean(soup.select_one("div.title")),
+        "abilities": " ".join(
+            clean_symbols(abilities).get_text().replace("\n", "").split()),
+        "change_history": {
+            list(change.stripped_strings)[0]:  # day
+            clean_changes(change)  # changes list
+            for change in change_log
+            },
+        "links": {
+            "path": soup.select_one("#ca-view").a.get("href"),
+            "image": soup.select_one(".thumbimage").get("src"),
+            "panel": soup.select_one("p > a.image > img").get("src"),
+            },
+        "position": "Middle Far Right",
+        }
+    return True, result
+
+
 def export_units_json(data, file_name="units.json"):
     """
     Save data into .json format/file.
