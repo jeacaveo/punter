@@ -125,3 +125,4 @@ dmypy.json
 
 # Vi
 *.swp
+*.swo
