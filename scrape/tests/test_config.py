@@ -2,7 +2,6 @@
 import os
 import unittest
 from scrape.config import (
-    GENERAL,
     PRISMATA_WIKI,
     )
 
