@@ -5,6 +5,8 @@ import requests
 
 from bs4 import BeautifulSoup
 
+from scrape import config
+
 
 # Mapping from symbol titles into str representation
 TITLE_SYMBOL_MAP = {
@@ -72,8 +74,7 @@ def unit_table_to_dict(data):
 
     Returns
     -------
-    dict
-        Units information
+    bool, dict
 
     Example
     -------
@@ -113,6 +114,11 @@ def unit_table_to_dict(data):
                 },
             ...
         }
+
+    Example
+    -------
+    False, {"message": "Error message"}
+    True, {output}
 
     """
     soup = BeautifulSoup(data, "html.parser")
@@ -401,3 +407,25 @@ def export_units_csv(data, file_name="units.csv"):
     except KeyError:
         return False, {"message": "Invalid format (missing key)."}
     return True, {"message": "Success"}
+
+
+def fetch_units(url=config.PRISMATA_WIKI["BASE_URL"]):
+    content = get_content(url)
+    if not content:
+        return False, {"message": "Invalid URL configuration."}
+
+    is_valid, all_units = unit_table_to_dict(content)
+    if not is_valid:
+        return is_valid, all_units
+
+    for name, value in all_units.items():
+        valid_detail, unit_detail = unit_to_dict(
+            get_content(f"{url}{value['links']['path']}"))
+        if valid_detail:
+            # Flatten nested dicts (only one level)
+            for key in set(value.keys()).intersection(unit_detail.keys()):
+                if isinstance(unit_detail[key], dict):
+                    value[key].update(unit_detail.pop(key))
+            value.update(unit_detail)
+
+    return is_valid, all_units

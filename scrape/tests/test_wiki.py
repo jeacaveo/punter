@@ -7,12 +7,14 @@ from mock import (
     patch,
     )
 
+from scrape import config
 from scrape.wiki import (
     clean,
     clean_changes,
     clean_symbols,
     export_units_csv,
     export_units_json,
+    fetch_units,
     get_content,
     unit_to_dict,
     unit_table_to_dict,
@@ -558,4 +560,174 @@ class UnitToDictTests(unittest.TestCase):
         symbols_mock.assert_has_calls([
             call(abilities[2]),
             call.get_text(),
+            ])
+
+
+class FetchUnitsTests(unittest.TestCase):
+    """ Tests for scrape.wiki.fetch_units. """
+
+    def setUp(self):
+        self.base_url = config.PRISMATA_WIKI["BASE_URL"]
+
+    @patch("scrape.wiki.get_content")
+    def test_invalid_url_config(self, content_mock):
+        """ Tests invalid URL configuration. """
+        # Given
+        expected_result = False, {"message": "Invalid URL configuration."}
+
+        content_mock.return_value = ""
+
+        # When
+        result = fetch_units()
+
+        # Then
+        self.assertEqual(result, expected_result)
+        content_mock.assert_called_once_with(self.base_url)
+
+    @patch("scrape.wiki.get_content")
+    def test_invalid_custom_url_config(self, content_mock):
+        """ Tests invalid custom URL. """
+        # Given
+        url = "https://some.com"
+        expected_result = False, {"message": "Invalid URL configuration."}
+
+        content_mock.return_value = ""
+
+        # When
+        result = fetch_units(url)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        content_mock.assert_called_once_with(url)
+
+    @patch("scrape.wiki.unit_table_to_dict")
+    @patch("scrape.wiki.get_content")
+    def test_invalid_html_all_units(self, content_mock, table_mock):
+        """ Tests invalid HTML fetch for all units. """
+        # Given
+        expected_data = "invalid content"
+        expected_result = False, {"message": "error"}
+
+        content_mock.return_value = expected_data
+        table_mock.return_value = expected_result
+
+        # When
+        result = fetch_units()
+
+        # Then
+        self.assertEqual(result, expected_result)
+        content_mock.assert_called_once_with(self.base_url)
+        table_mock.assert_called_once_with(expected_data)
+
+    @patch("scrape.wiki.unit_to_dict")
+    @patch("scrape.wiki.unit_table_to_dict")
+    @patch("scrape.wiki.get_content")
+    def test_no_details(self, content_mock, table_mock, unit_mock):
+        """ Tests fetch no details for units. """
+        # Given
+        expected_raw_data = "some data"
+        expected_data = {
+            "unit1": {"key1": "val1", "links": {"path": "/unit1"}},
+            "unit2": {"key3": "val3", "links": {"path": "/unit2"}},
+            }
+        expected_result = True, expected_data
+
+        content_mock.side_effect = [
+            expected_raw_data,
+            "",
+            "",
+            ]
+        table_mock.return_value = True, expected_data
+        unit_mock.side_effect = [
+            (False, {}),
+            (False, {}),
+            ]
+
+        # When
+        result = fetch_units()
+
+        # Then
+        self.assertEqual(result, expected_result)
+        content_mock.assert_has_calls([
+            call(self.base_url),
+            call(f"{self.base_url}{expected_data['unit1']['links']['path']}"),
+            call(f"{self.base_url}{expected_data['unit2']['links']['path']}"),
+            ])
+        table_mock.assert_called_once_with(expected_raw_data)
+        unit_mock.assert_has_calls([
+            call(""),
+            call(""),
+            ])
+
+    @patch("scrape.wiki.unit_to_dict")
+    @patch("scrape.wiki.unit_table_to_dict")
+    @patch("scrape.wiki.get_content")
+    def test_details(self, content_mock, table_mock, unit_mock):
+        """ Tests fetch details for units. """
+        # Given
+        expected_raw_table = "raw table"
+        expected_raw_unit1 = "raw unit 1"
+        expected_raw_unit2 = "raw unit 2"
+        expected_table_data = {
+            "unit1": {
+                "key1": "val1",
+                "links": {"path": "/unit1"},
+                },
+            "unit2": {
+                "key3": "val3",
+                "links": {"path": "/unit2"},
+                },
+            }
+        expected_unit1 = {
+            "name": "unit1",
+            "keyX": "extra val 1",
+            "links": {"valW": "sub3"},
+            }
+        expected_unit2 = {
+            "name": "unit2",
+            "keyZ": "extra val 2",
+            "links": {"valY": "sub4"},
+            }
+        expected_data = {
+            "unit1": {
+                "key1": "val1",
+                "links": {"path": "/unit1", "valW": "sub3"},
+                "name": "unit1",
+                "keyX": "extra val 1",
+                },
+            "unit2": {
+                "key3": "val3",
+                "links": {"path": "/unit2", "valY": "sub4"},
+                "name": "unit2",
+                "keyZ": "extra val 2",
+                },
+            }
+        expected_result = True, expected_data
+
+        content_mock.side_effect = [
+            expected_raw_table,
+            expected_raw_unit1,
+            expected_raw_unit2,
+            ]
+        table_mock.return_value = True, expected_table_data
+        unit_mock.side_effect = [
+            (True, expected_unit1),
+            (True, expected_unit2),
+            ]
+
+        # When
+        result = fetch_units()
+
+        # Then
+        self.maxDiff = None
+        self.assertEqual(result, expected_result)
+        content_mock.assert_has_calls([
+            call(self.base_url),
+            call(f"{self.base_url}{expected_data['unit1']['links']['path']}"),
+            call(f"{self.base_url}{expected_data['unit2']['links']['path']}"),
+            ])
+        table_mock.assert_called_once_with(expected_raw_table)
+        unit_mock.assert_has_calls([
+            call(expected_raw_unit1),
+            call(expected_raw_unit2),
             ])
