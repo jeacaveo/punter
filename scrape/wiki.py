@@ -75,7 +75,7 @@ def unit_table_to_dict(data):
 
     Returns
     -------
-    bool, dict
+    tuple(bool, dict)
 
     Example
     -------
@@ -283,7 +283,7 @@ def export_units_json(data, file_name="units.json"):
 
     Returns
     -------
-    bool, dict
+    tuple(bool, dict)
 
     Example
     -------
@@ -348,7 +348,7 @@ def export_units_csv(data, file_name="units.csv"):
 
     Returns
     -------
-    bool, dict
+    tuple(bool, dict)
 
     Example
     -------
@@ -410,8 +410,30 @@ def export_units_csv(data, file_name="units.csv"):
     return True, {"message": "Success"}
 
 
-def fetch_units(url=PRISMATA_WIKI["BASE_URL"]):
-    content = get_content(url)
+def fetch_units(include=["all"]):
+    """
+    Get information for Prismata units.
+
+    Steps:
+    1. Get general information for all units.
+    2. Exclude all units not in the include parameter.
+    3. Fetch details for remaining units.
+
+    Parameters
+    ----------
+    include : list(str)
+        Name of units to fetch. Defaults to 'all'.
+
+    Returns
+    -------
+    tuple(bool, dict):
+        HTML content.
+
+    """
+    base_url = PRISMATA_WIKI["BASE_URL"]
+
+    # Get general information for all units
+    content = get_content(f"{base_url}{PRISMATA_WIKI['UNITS_PATH']}")
     if not content:
         return False, {"message": "Invalid URL configuration."}
 
@@ -419,10 +441,18 @@ def fetch_units(url=PRISMATA_WIKI["BASE_URL"]):
     if not is_valid:
         return is_valid, all_units
 
+    # Filter out units based on include param
+    all_units = {
+        key: val
+        for key, val in all_units.items()
+        if "all" in include or key in include
+        }
+
+    # Get details for each unit
     for name, value in all_units.items():
         delay()
         valid_detail, unit_detail = unit_to_dict(
-            get_content(f"{url}{value['links']['path']}"))
+            get_content(f"{base_url}{value['links']['path']}"))
         if valid_detail:
             # Flatten nested dicts (only one level)
             for key in set(value.keys()).intersection(unit_detail.keys()):

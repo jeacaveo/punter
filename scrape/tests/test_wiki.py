@@ -573,6 +573,7 @@ class FetchUnitsTests(unittest.TestCase):
     def test_invalid_url_config(self, content_mock):
         """ Tests invalid URL configuration. """
         # Given
+        expected_url = f"{self.base_url}{config.PRISMATA_WIKI['UNITS_PATH']}"
         expected_result = False, {"message": "Invalid URL configuration."}
 
         content_mock.return_value = ""
@@ -582,29 +583,14 @@ class FetchUnitsTests(unittest.TestCase):
 
         # Then
         self.assertEqual(result, expected_result)
-        content_mock.assert_called_once_with(self.base_url)
-
-    @patch("scrape.wiki.get_content")
-    def test_invalid_custom_url_config(self, content_mock):
-        """ Tests invalid custom URL. """
-        # Given
-        url = "https://some.com"
-        expected_result = False, {"message": "Invalid URL configuration."}
-
-        content_mock.return_value = ""
-
-        # When
-        result = fetch_units(url)
-
-        # Then
-        self.assertEqual(result, expected_result)
-        content_mock.assert_called_once_with(url)
+        content_mock.assert_called_once_with(expected_url)
 
     @patch("scrape.wiki.unit_table_to_dict")
     @patch("scrape.wiki.get_content")
     def test_invalid_html_all_units(self, content_mock, table_mock):
         """ Tests invalid HTML fetch for all units. """
         # Given
+        expected_url = f"{self.base_url}{config.PRISMATA_WIKI['UNITS_PATH']}"
         expected_data = "invalid content"
         expected_result = False, {"message": "error"}
 
@@ -616,7 +602,7 @@ class FetchUnitsTests(unittest.TestCase):
 
         # Then
         self.assertEqual(result, expected_result)
-        content_mock.assert_called_once_with(self.base_url)
+        content_mock.assert_called_once_with(expected_url)
         table_mock.assert_called_once_with(expected_data)
 
     @patch("scrape.wiki.unit_to_dict")
@@ -626,6 +612,7 @@ class FetchUnitsTests(unittest.TestCase):
     def test_no_details(self, content_mock, table_mock, delay_mock, unit_mock):
         """ Tests fetch no details for units. """
         # Given
+        expected_url = f"{self.base_url}{config.PRISMATA_WIKI['UNITS_PATH']}"
         expected_raw_data = "some data"
         expected_data = {
             "unit1": {"key1": "val1", "links": {"path": "/unit1"}},
@@ -650,7 +637,7 @@ class FetchUnitsTests(unittest.TestCase):
         # Then
         self.assertEqual(result, expected_result)
         content_mock.assert_has_calls([
-            call(self.base_url),
+            call(expected_url),
             call(f"{self.base_url}{expected_data['unit1']['links']['path']}"),
             call(f"{self.base_url}{expected_data['unit2']['links']['path']}"),
             ])
@@ -668,9 +655,11 @@ class FetchUnitsTests(unittest.TestCase):
     @patch("scrape.wiki.delay")
     @patch("scrape.wiki.unit_table_to_dict")
     @patch("scrape.wiki.get_content")
-    def test_details(self, content_mock, table_mock, delay_mock, unit_mock):
-        """ Tests fetch details for units. """
+    def test_details_all(
+            self, content_mock, table_mock, delay_mock, unit_mock):
+        """ Tests fetch details for all units. """
         # Given
+        expected_url = f"{self.base_url}{config.PRISMATA_WIKI['UNITS_PATH']}"
         expected_raw_table = "raw table"
         expected_raw_unit1 = "raw unit 1"
         expected_raw_unit2 = "raw unit 2"
@@ -728,7 +717,7 @@ class FetchUnitsTests(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(result, expected_result)
         content_mock.assert_has_calls([
-            call(self.base_url),
+            call(expected_url),
             call(f"{self.base_url}{expected_data['unit1']['links']['path']}"),
             call(f"{self.base_url}{expected_data['unit2']['links']['path']}"),
             ])
@@ -741,3 +730,62 @@ class FetchUnitsTests(unittest.TestCase):
             call(expected_raw_unit1),
             call(expected_raw_unit2),
             ])
+
+    @patch("scrape.wiki.unit_to_dict")
+    @patch("scrape.wiki.delay")
+    @patch("scrape.wiki.unit_table_to_dict")
+    @patch("scrape.wiki.get_content")
+    def test_details_some(
+            self, content_mock, table_mock, delay_mock, unit_mock):
+        """ Tests fetch details for specific units. """
+        # Given
+        expected_url = f"{self.base_url}{config.PRISMATA_WIKI['UNITS_PATH']}"
+        expected_raw_table = "raw table"
+        expected_raw_unit1 = "raw unit 2"
+        expected_table_data = {
+            "unit1": {
+                "key1": "val1",
+                "links": {"path": "/unit1"},
+                },
+            "unit2": {
+                "key3": "val3",
+                "links": {"path": "/unit2"},
+                },
+            }
+        expected_unit1 = {
+            "name": "unit2",
+            "keyZ": "extra val 2",
+            "links": {"valY": "sub4"},
+            }
+        expected_data = {
+            "unit2": {
+                "key3": "val3",
+                "links": {"path": "/unit2", "valY": "sub4"},
+                "name": "unit2",
+                "keyZ": "extra val 2",
+                },
+            }
+        expected_result = True, expected_data
+
+        content_mock.side_effect = [
+            expected_raw_table,
+            expected_raw_unit1,
+            ]
+        table_mock.return_value = True, expected_table_data
+        unit_mock.side_effect = [
+            (True, expected_unit1),
+            ]
+
+        # When
+        result = fetch_units(include=["unit2"])
+
+        # Then
+        self.maxDiff = None
+        self.assertEqual(result, expected_result)
+        content_mock.assert_has_calls([
+            call(expected_url),
+            call(f"{self.base_url}{expected_data['unit2']['links']['path']}"),
+            ])
+        table_mock.assert_called_once_with(expected_raw_table)
+        delay_mock.assert_called_once_with()
+        unit_mock.assert_called_once_with(expected_raw_unit1)
