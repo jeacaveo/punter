@@ -5,7 +5,8 @@ import requests
 
 from bs4 import BeautifulSoup
 
-from scrape import config
+from scrape.config import PRISMATA_WIKI
+from scrape.utils import delay
 
 
 # Mapping from symbol titles into str representation
@@ -409,7 +410,7 @@ def export_units_csv(data, file_name="units.csv"):
     return True, {"message": "Success"}
 
 
-def fetch_units(url=config.PRISMATA_WIKI["BASE_URL"]):
+def fetch_units(url=PRISMATA_WIKI["BASE_URL"]):
     content = get_content(url)
     if not content:
         return False, {"message": "Invalid URL configuration."}
@@ -419,6 +420,7 @@ def fetch_units(url=config.PRISMATA_WIKI["BASE_URL"]):
         return is_valid, all_units
 
     for name, value in all_units.items():
+        delay()
         valid_detail, unit_detail = unit_to_dict(
             get_content(f"{url}{value['links']['path']}"))
         if valid_detail:

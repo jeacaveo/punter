@@ -620,9 +620,10 @@ class FetchUnitsTests(unittest.TestCase):
         table_mock.assert_called_once_with(expected_data)
 
     @patch("scrape.wiki.unit_to_dict")
+    @patch("scrape.wiki.delay")
     @patch("scrape.wiki.unit_table_to_dict")
     @patch("scrape.wiki.get_content")
-    def test_no_details(self, content_mock, table_mock, unit_mock):
+    def test_no_details(self, content_mock, table_mock, delay_mock, unit_mock):
         """ Tests fetch no details for units. """
         # Given
         expected_raw_data = "some data"
@@ -654,15 +655,20 @@ class FetchUnitsTests(unittest.TestCase):
             call(f"{self.base_url}{expected_data['unit2']['links']['path']}"),
             ])
         table_mock.assert_called_once_with(expected_raw_data)
+        delay_mock.assert_has_calls([
+            call(),
+            call(),
+            ])
         unit_mock.assert_has_calls([
             call(""),
             call(""),
             ])
 
     @patch("scrape.wiki.unit_to_dict")
+    @patch("scrape.wiki.delay")
     @patch("scrape.wiki.unit_table_to_dict")
     @patch("scrape.wiki.get_content")
-    def test_details(self, content_mock, table_mock, unit_mock):
+    def test_details(self, content_mock, table_mock, delay_mock, unit_mock):
         """ Tests fetch details for units. """
         # Given
         expected_raw_table = "raw table"
@@ -727,6 +733,10 @@ class FetchUnitsTests(unittest.TestCase):
             call(f"{self.base_url}{expected_data['unit2']['links']['path']}"),
             ])
         table_mock.assert_called_once_with(expected_raw_table)
+        delay_mock.assert_has_calls([
+            call(),
+            call(),
+            ])
         unit_mock.assert_has_calls([
             call(expected_raw_unit1),
             call(expected_raw_unit2),
