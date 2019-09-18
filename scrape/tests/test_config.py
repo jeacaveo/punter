@@ -23,7 +23,9 @@ class VariablesTests(unittest.TestCase):
         # Given
         expected_base_url = "https://prismata.gamepedia.com"
         expepcted_units_path = "/Unit"
+        expepcted_save_path = "scrape/wiki"
 
         # Then
         self.assertEqual(PRISMATA_WIKI["BASE_URL"], expected_base_url)
         self.assertEqual(PRISMATA_WIKI["UNITS_PATH"], expepcted_units_path)
+        self.assertEqual(PRISMATA_WIKI["SAVE_PATH"], expepcted_save_path)

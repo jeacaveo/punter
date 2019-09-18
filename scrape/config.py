@@ -8,4 +8,5 @@ GENERAL = {
 PRISMATA_WIKI = {
     "BASE_URL": "https://prismata.gamepedia.com",
     "UNITS_PATH": "/Unit",
+    "SAVE_PATH": "scrape/wiki",
     }

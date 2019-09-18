@@ -21,7 +21,7 @@ TITLE_SYMBOL_MAP = {
     }
 
 
-def get_content(url):
+def get_content(url, save_path=""):
     """
     Get HTML for URL.
 
@@ -38,6 +38,9 @@ def get_content(url):
     """
     response = requests.get(url)
     if response.status_code == 200:
+        if save_path:
+            with open(save_path, "w") as out_file:
+                out_file.write(response.content)
         return response.content
     return ""
 

@@ -59,6 +59,34 @@ class GetContentTests(unittest.TestCase):
         self.assertEqual(result, expected_result)
         requests_mock.assert_called_once_with(url)
 
+    @patch("builtins.open")
+    @patch("scrape.wiki.requests.get")
+    def test_save(self, requests_mock, open_mock):
+        """ Tests saving of content when request is successfull. """
+        # Given
+        url = "http://example.com"
+        save_path = config.PRISMATA_WIKI["SAVE_PATH"]
+        expected_result = "<html></html>"
+
+        requests_mock.return_value = MagicMock(
+            status_code=200,
+            content=expected_result,
+            )
+        open_mock.return_value = open_mock
+
+        # When
+        result = get_content(url, save_path=save_path)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        requests_mock.assert_called_once_with(url)
+        open_mock.assert_has_calls([
+            call(save_path, "w"),
+            call.__enter__(),
+            call.__enter__().write(expected_result),
+            call.__exit__(None, None, None),
+            ])
+
 
 class CleanTests(unittest.TestCase):
     """ Tests for scrape.wiki.clean. """
