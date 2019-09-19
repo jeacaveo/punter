@@ -21,7 +21,7 @@ TITLE_SYMBOL_MAP = {
     }
 
 
-def get_content(url, save_path=""):
+def get_content(url, file_name=""):
     """
     Get HTML for URL.
 
@@ -38,7 +38,8 @@ def get_content(url, save_path=""):
     """
     response = requests.get(url)
     if response.status_code == 200:
-        if save_path:
+        if file_name:
+            save_path = f"{PRISMATA_WIKI['SAVE_PATH']}{file_name}"
             with open(save_path, "w") as out_file:
                 out_file.write(response.content)
         return response.content
@@ -413,7 +414,7 @@ def export_units_csv(data, file_name="units.csv"):
     return True, {"message": "Success"}
 
 
-def fetch_units(include=["all"]):
+def fetch_units(include=["all"], save_source=""):
     """
     Get information for Prismata units.
 
@@ -436,7 +437,9 @@ def fetch_units(include=["all"]):
     base_url = PRISMATA_WIKI["BASE_URL"]
 
     # Get general information for all units
-    content = get_content(f"{base_url}{PRISMATA_WIKI['UNITS_PATH']}")
+    content = get_content(
+        f"{base_url}{PRISMATA_WIKI['UNITS_PATH']}",
+        file_name=save_source and PRISMATA_WIKI["UNITS_PATH"])
     if not content:
         return False, {"message": "Invalid URL configuration."}
 
@@ -454,8 +457,10 @@ def fetch_units(include=["all"]):
     # Get details for each unit
     for name, value in all_units.items():
         delay()
-        valid_detail, unit_detail = unit_to_dict(
-            get_content(f"{base_url}{value['links']['path']}"))
+        content = get_content(
+            f"{base_url}{value['links']['path']}",
+            file_name=save_source and value["links"]["path"])
+        valid_detail, unit_detail = unit_to_dict(content)
         if valid_detail:
             # Flatten nested dicts (only one level)
             for key in set(value.keys()).intersection(unit_detail.keys()):
