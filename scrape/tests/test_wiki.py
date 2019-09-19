@@ -1,4 +1,5 @@
 """ Test for scrape.wiki module. """
+import json
 import os
 import unittest
 from mock import (
@@ -263,11 +264,8 @@ class ExportUnitsJsonTests(unittest.TestCase):
     def setUp(self):
         self.file_name = "units.json.test"
 
-    def tearDown(self):
-        if os.path.isfile(self.file_name):
-            os.remove(self.file_name)
-
-    def test_success(self):
+    @patch("builtins.open")
+    def test_success(self, open_mock):
         """ Tests json file is saved when valid format is provided. """
         # Given
         data = {
@@ -303,14 +301,23 @@ class ExportUnitsJsonTests(unittest.TestCase):
                 "unit_spell": "unit/spell",
                 }
             }
+        json_data = json.dumps(
+            data, sort_keys=True, indent=4, separators=(",", ": "))
         expected_result = True, {"message": "Success"}
+
+        open_mock.return_value = open_mock
 
         # When
         result = export_units_json(data, file_name=self.file_name)
 
         # Then
         self.assertEqual(result, expected_result)
-        self.assertTrue(os.path.isfile(self.file_name))
+        open_mock.assert_has_calls([
+            call(self.file_name, "w"),
+            call.__enter__(),
+            call.__enter__().write(json_data),
+            call.__exit__(None, None, None),
+            ])
 
 
 class ExportUnitsCsvTests(unittest.TestCase):
