@@ -41,7 +41,7 @@ def get_content(url, file_name=""):
         if file_name:
             save_path = f"{PRISMATA_WIKI['SAVE_PATH']}{file_name}"
             with open(save_path, "w") as out_file:
-                out_file.write(response.content)
+                out_file.write(str(response.content))
         return response.content
     return ""
 

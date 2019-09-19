@@ -126,3 +126,6 @@ dmypy.json
 # Vi
 *.swp
 *.swo
+
+# Project especific
+scrape/files
