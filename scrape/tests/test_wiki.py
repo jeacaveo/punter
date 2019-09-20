@@ -60,9 +60,10 @@ class GetContentTests(unittest.TestCase):
         self.assertEqual(result, expected_result)
         requests_mock.assert_called_once_with(url)
 
+    @patch("scrape.wiki.BeautifulSoup")
     @patch("builtins.open")
     @patch("scrape.wiki.requests.get")
-    def test_save(self, requests_mock, open_mock):
+    def test_save(self, requests_mock, open_mock, soup_mock):
         """ Tests saving of content when request is successfull. """
         # Given
         url = "http://example.com"
@@ -74,6 +75,8 @@ class GetContentTests(unittest.TestCase):
             content=expected_result,
             )
         open_mock.return_value = open_mock
+        soup_mock.return_value = soup_mock
+        soup_mock.prettify.return_value = expected_result
 
         # When
         result = get_content(url, file_name=file_name)
@@ -86,6 +89,10 @@ class GetContentTests(unittest.TestCase):
             call.__enter__(),
             call.__enter__().write(expected_result),
             call.__exit__(None, None, None),
+            ])
+        soup_mock.assert_has_calls([
+            call(expected_result, "html.parser"),
+            call.prettify(),
             ])
 
 
@@ -525,10 +532,10 @@ class UnitToDictTests(unittest.TestCase):
         path = "/Unit_Name"
         image_url = "https://image.url.com"
         panel_url = "https://panel.url.com"
-        abilities = ["", "", "Ability1. Ability 2"]
+        abilities = ["Ability1. Ability 2"]
         expected_dict = {
             "name": name,
-            "abilities": abilities[2],
+            "abilities": abilities[-1],
             "change_history": {
                 "day 1": ["change1", "change2"],
                 "day 2": ["change3"],
@@ -561,7 +568,7 @@ class UnitToDictTests(unittest.TestCase):
         clean_mock.return_value = name
         div_box.return_value = abilities
         symbols_mock.return_value = symbols_mock
-        symbols_mock.get_text.return_value = abilities[2]
+        symbols_mock.get_text.return_value = abilities[-1]
         change_log.return_value = change_log
         change_log.find_parent.return_value = change_log
         change_log.find_next.return_value = change_log
@@ -587,13 +594,16 @@ class UnitToDictTests(unittest.TestCase):
             ])
         div_box.assert_called_once_with("div")
         change_log.assert_has_calls([
+            call.__bool__(),
             call.find_parent("h2"),
+            call.__bool__(),
             call.find_next("ul"),
+            call.__bool__(),
             call.find_all("li", recursive=False),
             ])
         clean_mock.assert_called_once_with(name)
         symbols_mock.assert_has_calls([
-            call(abilities[2]),
+            call(abilities[-1]),
             call.get_text(),
             ])
 

@@ -41,7 +41,7 @@ def get_content(url, file_name=""):
         if file_name:
             save_path = f"{PRISMATA_WIKI['SAVE_PATH']}{file_name}"
             with open(save_path, "w") as out_file:
-                out_file.write(str(response.content))
+                out_file.write(BeautifulSoup(response.content, "html.parser").prettify())
         return response.content
     return ""
 
@@ -187,7 +187,7 @@ def clean_symbols(element):
 
     """
     for icon in element("a"):
-        title = icon.get("title")
+        title = icon.get("title") or icon.text
         symbol = TITLE_SYMBOL_MAP.get(title, title)
         icon.replace_with(symbol)
     return element
@@ -253,23 +253,26 @@ def unit_to_dict(data):
     if not soup:
         return False, {"message": "Invalid format."}
 
-    abilities = soup.select_one("div.box")("div")[2]
-    change_log = soup.select_one("#Change_log").find_parent(
-        "h2").find_next("ul").find_all("li", recursive=False)
+    abilities = soup.select_one("div.box")("div")[-1]
+    change_log = soup.select_one("#Change_log")
+    change_log = change_log and change_log.find_parent("h2")
+    change_log = change_log and change_log.find_next("ul")
+    change_log = change_log and change_log.find_all("li", recursive=False)
 
     result = {
         "name": clean(soup.select_one("div.title")),
         "abilities": " ".join(
-            clean_symbols(abilities).get_text().replace("\n", "").split()),
+            clean_symbols(abilities).get_text().replace("\n", "").split()
+            ),
         "change_history": {
             list(change.stripped_strings)[0]:  # day
             clean_changes(change)  # changes list
-            for change in change_log
+            for change in change_log or []
             },
         "links": {
             "path": soup.select_one("#ca-view").a.get("href"),
-            "image": soup.select_one(".thumbimage").get("src"),
-            "panel": soup.select_one("p > a.image > img").get("src"),
+            "image": (soup.select_one(".thumbimage") or {}).get("src"),
+            "panel": (soup.select_one("p > a.image > img") or {}).get("src"),
             },
         "position": "Middle Far Right",
         }
