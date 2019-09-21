@@ -1,6 +1,7 @@
 """ Module for scraping prismata.gamepedia.com """
 import csv
 import json
+import os
 import requests
 
 from bs4 import BeautifulSoup
@@ -21,14 +22,16 @@ TITLE_SYMBOL_MAP = {
     }
 
 
-def get_content(url, file_name=""):
+def get_content(path, save_file=False):
     """
-    Get HTML for URL.
+    Get HTML for path.
 
     Parameters
     ----------
-    url : str
-        Valid URL to get content for.
+    path : str
+        Valid path to get content from.
+    save_file : bool, defaults to False
+        Saves a file to configed save path if not reading from a file.
 
     Returns
     -------
@@ -36,14 +39,22 @@ def get_content(url, file_name=""):
         HTML content.
 
     """
-    response = requests.get(url)
-    if response.status_code == 200:
-        if file_name:
-            save_path = f"{PRISMATA_WIKI['SAVE_PATH']}{file_name}"
-            with open(save_path, "w") as out_file:
-                out_file.write(BeautifulSoup(response.content, "html.parser").prettify())
-        return response.content
-    return ""
+    read_file = not path.startswith("http")
+    if read_file and os.path.isfile(path):
+        content = open(path, "r")
+        is_valid = True
+    else:
+        response = requests.get(path)
+        content = response.content
+        is_valid = response.status_code == 200
+
+    if not is_valid:
+        return ""
+
+    if save_file and not read_file:
+        with open(path, "w") as out_file:
+            out_file.write(BeautifulSoup(content, "html.parser").prettify())
+    return content
 
 
 def clean(item, cast=str):
@@ -176,7 +187,7 @@ def clean_symbols(element):
 
     Parameters
     ----------
-    item : bs4.element.Tag
+    element : bs4.element.Tag
         Tag object from BeautifulSoup4 library.
 
     Returns
@@ -287,6 +298,8 @@ def export_units_json(data, file_name="units.json"):
     ----------
     data : dict
         Data to export. See Example for expected format.
+    file_name : str, defaults to  "units.json"
+        Path of file to save.
 
     Returns
     -------
@@ -352,6 +365,8 @@ def export_units_csv(data, file_name="units.csv"):
     ----------
     data : dict
         Data to export. See Example for expected format.
+    file_name : str, defaults to  "units.csv"
+        Path of file to save.
 
     Returns
     -------
@@ -417,7 +432,7 @@ def export_units_csv(data, file_name="units.csv"):
     return True, {"message": "Success"}
 
 
-def fetch_units(include=["all"], save_source=""):
+def fetch_units(include=["all"], save_source=False):
     """
     Get information for Prismata units.
 
@@ -430,6 +445,8 @@ def fetch_units(include=["all"], save_source=""):
     ----------
     include : list(str)
         Name of units to fetch. Defaults to 'all'.
+    save_source : bool, defaults to False
+        Wether to save the fetched html into a file on disk.
 
     Returns
     -------
@@ -441,8 +458,7 @@ def fetch_units(include=["all"], save_source=""):
 
     # Get general information for all units
     content = get_content(
-        f"{base_url}{PRISMATA_WIKI['UNITS_PATH']}",
-        file_name=save_source and PRISMATA_WIKI["UNITS_PATH"])
+        f"{base_url}{PRISMATA_WIKI['UNITS_PATH']}", save_file=save_source)
     if not content:
         return False, {"message": "Invalid URL configuration."}
 
@@ -461,8 +477,7 @@ def fetch_units(include=["all"], save_source=""):
     for name, value in all_units.items():
         delay()
         content = get_content(
-            f"{base_url}{value['links']['path']}",
-            file_name=save_source and value["links"]["path"])
+            f"{base_url}{value['links']['path']}", save_file=save_source)
         valid_detail, unit_detail = unit_to_dict(content)
         if valid_detail:
             # Flatten nested dicts (only one level)

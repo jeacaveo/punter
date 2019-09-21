@@ -67,7 +67,6 @@ class GetContentTests(unittest.TestCase):
         """ Tests saving of content when request is successfull. """
         # Given
         url = "http://example.com"
-        file_name = config.PRISMATA_WIKI["SAVE_PATH"]
         expected_result = "<html></html>"
 
         requests_mock.return_value = MagicMock(
@@ -79,13 +78,13 @@ class GetContentTests(unittest.TestCase):
         soup_mock.prettify.return_value = expected_result
 
         # When
-        result = get_content(url, file_name=file_name)
+        result = get_content(url, save_file=True)
 
         # Then
         self.assertEqual(result, expected_result)
         requests_mock.assert_called_once_with(url)
         open_mock.assert_has_calls([
-            call(f"{config.PRISMATA_WIKI['SAVE_PATH']}{file_name}", "w"),
+            call(url, "w"),
             call.__enter__(),
             call.__enter__().write(expected_result),
             call.__exit__(None, None, None),
@@ -94,6 +93,26 @@ class GetContentTests(unittest.TestCase):
             call(expected_result, "html.parser"),
             call.prettify(),
             ])
+
+    @patch("builtins.open")
+    @patch("os.path.isfile")
+    @patch("scrape.wiki.requests.get")
+    def test_read_from_file(self, requests_mock, isfile_mock, open_mock):
+        """ Tests content when file exists (instead of calling url). """
+        # Given
+        path = "/path/to/file.html"
+        expected_result = "<html></html>"
+
+        isfile_mock.return_value = True
+        open_mock.return_value = expected_result
+
+        # When
+        result = get_content(path)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        self.assertFalse(requests_mock.called)
+        open_mock.assert_called_once_with(path, "r")
 
 
 class CleanTests(unittest.TestCase):
@@ -628,8 +647,7 @@ class FetchUnitsTests(unittest.TestCase):
 
         # Then
         self.assertEqual(result, expected_result)
-        content_mock.assert_called_once_with(
-            expected_url, file_name="")
+        content_mock.assert_called_once_with(expected_url, save_file=False)
 
     @patch("scrape.wiki.unit_table_to_dict")
     @patch("scrape.wiki.get_content")
@@ -648,8 +666,7 @@ class FetchUnitsTests(unittest.TestCase):
 
         # Then
         self.assertEqual(result, expected_result)
-        content_mock.assert_called_once_with(
-            expected_url, file_name="")
+        content_mock.assert_called_once_with(expected_url, save_file=False)
         table_mock.assert_called_once_with(expected_data)
 
     @patch("scrape.wiki.unit_to_dict")
@@ -684,13 +701,13 @@ class FetchUnitsTests(unittest.TestCase):
         # Then
         self.assertEqual(result, expected_result)
         content_mock.assert_has_calls([
-            call(expected_url, file_name=""),
+            call(expected_url, save_file=False),
             call(
                 f"{self.base_url}{expected_data['unit1']['links']['path']}",
-                file_name=""),
+                save_file=False),
             call(
                 f"{self.base_url}{expected_data['unit2']['links']['path']}",
-                file_name=""),
+                save_file=False),
             ])
         table_mock.assert_called_once_with(expected_raw_data)
         delay_mock.assert_has_calls([
@@ -768,13 +785,13 @@ class FetchUnitsTests(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(result, expected_result)
         content_mock.assert_has_calls([
-            call(expected_url, file_name=""),
+            call(expected_url, save_file=False),
             call(
                 f"{self.base_url}{expected_data['unit1']['links']['path']}",
-                file_name=""),
+                save_file=False),
             call(
                 f"{self.base_url}{expected_data['unit2']['links']['path']}",
-                file_name=""),
+                save_file=False),
             ])
         table_mock.assert_called_once_with(expected_raw_table)
         delay_mock.assert_has_calls([
@@ -838,10 +855,10 @@ class FetchUnitsTests(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(result, expected_result)
         content_mock.assert_has_calls([
-            call(expected_url, file_name=""),
+            call(expected_url, save_file=False),
             call(
                 f"{self.base_url}{expected_data['unit2']['links']['path']}",
-                file_name=""),
+                save_file=False),
             ])
         table_mock.assert_called_once_with(expected_raw_table)
         delay_mock.assert_called_once_with()
