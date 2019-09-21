@@ -356,19 +356,6 @@ class ExportUnitsCsvTests(unittest.TestCase):
         if os.path.isfile(self.file_name):
             os.remove(self.file_name)
 
-    def test_format_index(self):
-        """ Tests error when empty data is provided. """
-        # Given
-        data = {}
-        expected_result = False, {"message": "No data provided."}
-
-        # When
-        result = export_units_csv(data, file_name=self.file_name)
-
-        # Then
-        self.assertEqual(result, expected_result)
-        self.assertTrue(os.path.isfile(self.file_name))
-
     def test_format_attribute(self):
         """ Tests error when invalid data format is provided. """
         # Given
@@ -429,6 +416,9 @@ class ExportUnitsCsvTests(unittest.TestCase):
                     },
                 "type": 1,
                 "unit_spell": "unit/spell",
+                "change_history": {
+                    "May 1st, 1984": ["Change1", "Change2"],
+                    },
                 }
             }
         expected_result = True, {"message": "Success"}

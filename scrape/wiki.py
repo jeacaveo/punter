@@ -378,30 +378,48 @@ def export_units_csv(data, file_name="units.csv"):
         {
             "Unit Name":
                 {
-                    "path": "/Unit_Name",
-                    "costs": {
-                        "gold": 1,
-                        "energy": 0,
-                        "green": 1,
-                        "blue": 0,
-                        "red": 1,
+                    "abilities": "",
+                    "attributes": {
+                        "blocker": false,
+                        "build_time": 0,
+                        "exhaust_ability": 0,
+                        "exhaust_turn": 0,
+                        "fragile": false,
+                        "frontline": false,
+                        "lifespan": 0,
+                        "prompt": false,
+                        "stamina": 0,
+                        "supply": 0,
+                    },
+                    "change_history": {
+                        "Month 00st, YEAR": [
+                                "",
+                                ...
+                            ],
+                        ...
                         },
-                    "attack": 1,
-                    "health": 1,
-                    "supply": 1,
-                    "frontline": True,
-                    "fragile": False,
-                    "blocker": True,
-                    "prompt": False,
-                    "stamina": 0,
-                    "lifespan": 0,
-                    "build_time": 0,
-                    "exhaust_turn": 0,
-                    "exhaust_ability": 0,
-                    "type": 1,
-                    "unit_spell": "Unit|Spell",
+                    "costs": {
+                        "blue": 0,
+                        "energy": 0,
+                        "gold": 0,
+                        "green": 0,
+                        "red": 0,
+                    },
+                    "links": {
+                        "image": "",
+                        "panel": "",
+                        "path": "",
+                    },
+                    "name": "",
+                    "position": "",
+                    "stats": {
+                        "attack": 0,
+                        "health": 0,
+                    },
+                    "type": 0,
+                    "unit_spell": "",
                 },
-            ...
+                ...
         }
 
     output:
@@ -412,19 +430,37 @@ def export_units_csv(data, file_name="units.csv"):
     try:
         flat_data_list = []
         for key, val in data.items():
-            unit = {"name": key}
+            unit = {}
+            unit.update(val.pop("attributes"))
             unit.update(val.pop("costs"))
+            unit.update(val.pop("links"))
+            unit.update(val.pop("stats"))
+            unit.update({
+                "change_history":
+                "|".join([
+                    f"{day}, {' '.join(change)}"
+                    for day, change in val.pop("change_history").items()
+                    ])
+                })
             unit.update(val)
             flat_data_list.append(unit)
 
         with open(file_name, "w") as out_file:
-            headers = flat_data_list[0].keys()
+            # For ordering purposes, Using explcit list
+            # instead of flat_data_list[0].keys()
+            headers = [
+                'name', 'supply', 'type', 'position', 'unit_spell',
+                'gold', 'blue', 'red', 'green', 'energy',
+                'attack', 'health', 'blocker', 'fragile',
+                'frontline', 'prompt', 'lifespan', 'stamina',
+                'build_time', 'exhaust_ability', 'exhaust_turn',
+                'abilities', 'path', 'image', 'panel',
+                'change_history',
+                ]
             writer = csv.DictWriter(out_file, fieldnames=headers)
             writer.writeheader()
             for unit in flat_data_list:
                 writer.writerow(unit)
-    except IndexError:
-        return False, {"message": "No data provided."}
     except AttributeError:
         return False, {"message": "Invalid format (nested data)."}
     except KeyError:
