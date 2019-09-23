@@ -1,7 +1,7 @@
 """ Test for scrape.config module. """
 import os
 import unittest
-from scrape.config import (
+from punter.scrape.config import (
     GENERAL,
     PRISMATA_WIKI,
     )

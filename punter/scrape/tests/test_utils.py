@@ -4,7 +4,7 @@ from mock import (
     patch,
     )
 
-from scrape.utils import (
+from punter.scrape.utils import (
     delay,
     )
 
@@ -12,8 +12,8 @@ from scrape.utils import (
 class DelayTests(unittest.TestCase):
     """ Tests for scrape.utils.delay function. """
 
-    @patch("scrape.utils.sleep")
-    @patch("scrape.utils.uniform")
+    @patch("punter.scrape.utils.sleep")
+    @patch("punter.scrape.utils.uniform")
     def test_no_params(self, random_mock, sleep_mock):
         """ Tests when no params are provided. """
         # Given
@@ -29,8 +29,8 @@ class DelayTests(unittest.TestCase):
         random_mock.assert_called_once_with(1, 3)
         sleep_mock.assert_called_once_with(expected_result)
 
-    @patch("scrape.utils.sleep")
-    @patch("scrape.utils.uniform")
+    @patch("punter.scrape.utils.sleep")
+    @patch("punter.scrape.utils.uniform")
     def test_params(self, random_mock, sleep_mock):
         """ Tests when params are provided. """
         # Given

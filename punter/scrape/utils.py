@@ -2,7 +2,7 @@
 from random import uniform
 from time import sleep
 
-from scrape.config import GENERAL
+from punter.scrape.config import GENERAL
 
 
 def delay(secs=GENERAL["THROTTLING_DELAY"]):

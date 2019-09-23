@@ -8,8 +8,8 @@ from mock import (
     patch,
     )
 
-from scrape import config
-from scrape.wiki import (
+from punter.scrape import config
+from punter.scrape.wiki import (
     clean,
     clean_changes,
     clean_symbols,
@@ -25,7 +25,7 @@ from scrape.wiki import (
 class GetContentTests(unittest.TestCase):
     """ Tests for scrape.wiki.get_content. """
 
-    @patch("scrape.wiki.requests.get")
+    @patch("punter.scrape.wiki.requests.get")
     def test_error(self, requests_mock):
         """ Tests response when request is not successfull. """
         # Given
@@ -41,7 +41,7 @@ class GetContentTests(unittest.TestCase):
         self.assertEqual(result, expected_result)
         requests_mock.assert_called_once_with(url)
 
-    @patch("scrape.wiki.requests.get")
+    @patch("punter.scrape.wiki.requests.get")
     def test_success(self, requests_mock):
         """ Tests response when request is successfull. """
         # Given
@@ -60,9 +60,9 @@ class GetContentTests(unittest.TestCase):
         self.assertEqual(result, expected_result)
         requests_mock.assert_called_once_with(url)
 
-    @patch("scrape.wiki.BeautifulSoup")
+    @patch("punter.scrape.wiki.BeautifulSoup")
     @patch("builtins.open")
-    @patch("scrape.wiki.requests.get")
+    @patch("punter.scrape.wiki.requests.get")
     def test_save(self, requests_mock, open_mock, soup_mock):
         """ Tests saving of content when request is successfull. """
         # Given
@@ -96,7 +96,7 @@ class GetContentTests(unittest.TestCase):
 
     @patch("builtins.open")
     @patch("os.path.isfile")
-    @patch("scrape.wiki.requests.get")
+    @patch("punter.scrape.wiki.requests.get")
     def test_read_from_file(self, requests_mock, isfile_mock, open_mock):
         """ Tests content when file exists (instead of calling url). """
         # Given
@@ -146,7 +146,7 @@ class CleanTests(unittest.TestCase):
 class UnitTableToDictTests(unittest.TestCase):
     """ Tests for scrape.wiki.unit_table_to_dict. """
 
-    @patch("scrape.wiki.BeautifulSoup")
+    @patch("punter.scrape.wiki.BeautifulSoup")
     def test_invalid_input_format(self, soup_mock):
         """ Tests result when input data has invalid format. """
         # Given
@@ -162,7 +162,7 @@ class UnitTableToDictTests(unittest.TestCase):
         self.assertEqual(result, expected_result)
         soup_mock.assert_called_once_with(data, "html.parser")
 
-    @patch("scrape.wiki.BeautifulSoup")
+    @patch("punter.scrape.wiki.BeautifulSoup")
     def test_empty_rows(self, soup_mock):
         """ Tests result when input data has valid format but no rows. """
         # Given
@@ -184,8 +184,8 @@ class UnitTableToDictTests(unittest.TestCase):
         soup_mock.return_value.table.assert_called_once_with("tr")
         row_mock.assert_called_once_with("td")
 
-    @patch("scrape.wiki.clean")
-    @patch("scrape.wiki.BeautifulSoup")
+    @patch("punter.scrape.wiki.clean")
+    @patch("punter.scrape.wiki.BeautifulSoup")
     def test_valid_input_format(self, soup_mock, clean_mock):
         """ Tests result when input data has valid format. """
         # Given
@@ -487,7 +487,7 @@ class CleanChangesTests(unittest.TestCase):
         self.assertEqual(result, expected_result)
         tag_obj.ul.assert_called_once_with("li")
 
-    @patch("scrape.wiki.clean_symbols")
+    @patch("punter.scrape.wiki.clean_symbols")
     def test_changes(self, symbols_mock):
         """ Tests result when input data has changes. """
         # Given
@@ -512,7 +512,7 @@ class CleanChangesTests(unittest.TestCase):
 class UnitToDictTests(unittest.TestCase):
     """ Tests for scrape.wiki.unit_to_dict. """
 
-    @patch("scrape.wiki.BeautifulSoup")
+    @patch("punter.scrape.wiki.BeautifulSoup")
     def test_invalid_input_format(self, soup_mock):
         """ Tests result when input data has invalid format. """
         # Given
@@ -528,10 +528,10 @@ class UnitToDictTests(unittest.TestCase):
         self.assertEqual(result, expected_result)
         soup_mock.assert_called_once_with(data, "html.parser")
 
-    @patch("scrape.wiki.clean_changes")
-    @patch("scrape.wiki.clean_symbols")
-    @patch("scrape.wiki.clean")
-    @patch("scrape.wiki.BeautifulSoup")
+    @patch("punter.scrape.wiki.clean_changes")
+    @patch("punter.scrape.wiki.clean_symbols")
+    @patch("punter.scrape.wiki.clean")
+    @patch("punter.scrape.wiki.BeautifulSoup")
     def test_valid_input_format(
             self, soup_mock, clean_mock, symbols_mock, changes_mock):
         """ Tests result when input data has valid format. """
@@ -623,7 +623,7 @@ class FetchUnitsTests(unittest.TestCase):
     def setUp(self):
         self.base_url = config.PRISMATA_WIKI["BASE_URL"]
 
-    @patch("scrape.wiki.get_content")
+    @patch("punter.scrape.wiki.get_content")
     def test_invalid_url_config(self, content_mock):
         """ Tests invalid URL configuration. """
         # Given
@@ -639,8 +639,8 @@ class FetchUnitsTests(unittest.TestCase):
         self.assertEqual(result, expected_result)
         content_mock.assert_called_once_with(expected_url, save_file=False)
 
-    @patch("scrape.wiki.unit_table_to_dict")
-    @patch("scrape.wiki.get_content")
+    @patch("punter.scrape.wiki.unit_table_to_dict")
+    @patch("punter.scrape.wiki.get_content")
     def test_invalid_html_all_units(self, content_mock, table_mock):
         """ Tests invalid HTML fetch for all units. """
         # Given
@@ -659,10 +659,10 @@ class FetchUnitsTests(unittest.TestCase):
         content_mock.assert_called_once_with(expected_url, save_file=False)
         table_mock.assert_called_once_with(expected_data)
 
-    @patch("scrape.wiki.unit_to_dict")
-    @patch("scrape.wiki.delay")
-    @patch("scrape.wiki.unit_table_to_dict")
-    @patch("scrape.wiki.get_content")
+    @patch("punter.scrape.wiki.unit_to_dict")
+    @patch("punter.scrape.wiki.delay")
+    @patch("punter.scrape.wiki.unit_table_to_dict")
+    @patch("punter.scrape.wiki.get_content")
     def test_no_details(self, content_mock, table_mock, delay_mock, unit_mock):
         """ Tests fetch no details for units. """
         # Given
@@ -709,10 +709,10 @@ class FetchUnitsTests(unittest.TestCase):
             call(""),
             ])
 
-    @patch("scrape.wiki.unit_to_dict")
-    @patch("scrape.wiki.delay")
-    @patch("scrape.wiki.unit_table_to_dict")
-    @patch("scrape.wiki.get_content")
+    @patch("punter.scrape.wiki.unit_to_dict")
+    @patch("punter.scrape.wiki.delay")
+    @patch("punter.scrape.wiki.unit_table_to_dict")
+    @patch("punter.scrape.wiki.get_content")
     def test_details_all(
             self, content_mock, table_mock, delay_mock, unit_mock):
         """ Tests fetch details for all units. """
@@ -793,10 +793,10 @@ class FetchUnitsTests(unittest.TestCase):
             call(expected_raw_unit2),
             ])
 
-    @patch("scrape.wiki.unit_to_dict")
-    @patch("scrape.wiki.delay")
-    @patch("scrape.wiki.unit_table_to_dict")
-    @patch("scrape.wiki.get_content")
+    @patch("punter.scrape.wiki.unit_to_dict")
+    @patch("punter.scrape.wiki.delay")
+    @patch("punter.scrape.wiki.unit_table_to_dict")
+    @patch("punter.scrape.wiki.get_content")
     def test_details_some(
             self, content_mock, table_mock, delay_mock, unit_mock):
         """ Tests fetch details for specific units. """

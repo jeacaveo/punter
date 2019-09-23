@@ -128,4 +128,4 @@ dmypy.json
 *.swo
 
 # Project especific
-scrape/files
+punter/scrape/files

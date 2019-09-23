@@ -6,8 +6,8 @@ import requests
 
 from bs4 import BeautifulSoup
 
-from scrape.config import PRISMATA_WIKI
-from scrape.utils import delay
+from punter.scrape.config import PRISMATA_WIKI
+from punter.scrape.utils import delay
 
 
 # Mapping from symbol titles into str representation
