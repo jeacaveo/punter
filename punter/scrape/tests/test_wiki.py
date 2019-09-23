@@ -104,7 +104,8 @@ class GetContentTests(unittest.TestCase):
         expected_result = "<html></html>"
 
         isfile_mock.return_value = True
-        open_mock.return_value = expected_result
+        open_mock.return_value = open_mock
+        open_mock.__enter__.return_value = expected_result
 
         # When
         result = get_content(path)
@@ -112,7 +113,11 @@ class GetContentTests(unittest.TestCase):
         # Then
         self.assertEqual(result, expected_result)
         self.assertFalse(requests_mock.called)
-        open_mock.assert_called_once_with(path, "r")
+        open_mock.assert_has_calls([
+            call(path, "r"),
+            call.__enter__(),
+            call.__exit__(None, None, None),
+            ])
 
 
 class CleanTests(unittest.TestCase):
