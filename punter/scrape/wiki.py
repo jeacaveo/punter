@@ -45,7 +45,7 @@ def get_content(path, save_file=False):
     read_file = not path.startswith("http")
     if read_file and os.path.isfile(path):
         with open(path, "r") as local_file:
-            content = local_file
+            content = local_file.read()
             is_valid = True
     else:
         response = requests.get(path)

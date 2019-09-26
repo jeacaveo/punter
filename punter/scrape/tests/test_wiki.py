@@ -102,11 +102,13 @@ class GetContentTests(unittest.TestCase):
         """ Tests content when file exists (instead of calling url). """
         # Given
         path = "/path/to/file.html"
+        file_mock = MagicMock()
         expected_result = "<html></html>"
 
         isfile_mock.return_value = True
         open_mock.return_value = open_mock
-        open_mock.__enter__.return_value = expected_result
+        open_mock.__enter__.return_value = file_mock
+        file_mock.read.return_value = expected_result
 
         # When
         result = get_content(path)
@@ -117,8 +119,10 @@ class GetContentTests(unittest.TestCase):
         open_mock.assert_has_calls([
             call(path, "r"),
             call.__enter__(),
+            call.__enter__().read(),
             call.__exit__(None, None, None),
             ])
+        file_mock.read.assert_called_once_with()
 
 
 class CleanTests(unittest.TestCase):
