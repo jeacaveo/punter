@@ -12,6 +12,7 @@ from punter.scrape import config
 from punter.scrape.wiki import (
     clean,
     clean_changes,
+    clean_change_log,
     clean_symbols,
     export_units_csv,
     export_units_json,
@@ -514,6 +515,77 @@ class CleanChangesTests(unittest.TestCase):
         element_obj.get_text.assert_called_once_with()
 
 
+class CleanChangeLogTests(unittest.TestCase):
+    """ Tests for scrape.wiki.clean_change_log. """
+
+    def test_no_changes(self):
+        """ Tests result when data provided has no changes. """
+        # Given
+        change_log = MagicMock()
+        expected_result = {}
+
+        change_log.return_value = change_log
+        change_log.find_parent.return_value = change_log
+        change_log.find_next.return_value = change_log
+        change_log.find_all.return_value = []
+
+        # When
+        result = clean_change_log(change_log)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        change_log.assert_has_calls([
+            call.__bool__(),
+            call.find_parent("h2"),
+            call.__bool__(),
+            call.find_next("ul"),
+            call.__bool__(),
+            call.find_all("li", recursive=False),
+            ])
+
+    @patch("punter.scrape.wiki.clean_changes")
+    def test_changes(self, clean_mock):
+        """ Tests result when data provided has changes. """
+        # Given
+        change_log = MagicMock()
+        expected_day1 = "1984-10-31"
+        expected_day2 = "1999-12-02"
+        expected_change1 = ["change1", "change2"]
+        expected_change2 = ["change3"]
+        expected_result = {
+            expected_day1: expected_change1,
+            expected_day2: expected_change2,
+            }
+
+        changes1 = MagicMock(
+            stripped_strings=("October 31st, 1984",))
+        changes2 = MagicMock(
+            stripped_strings=("December 2nd, 1999",))
+        change_log.return_value = change_log
+        change_log.find_parent.return_value = change_log
+        change_log.find_next.return_value = change_log
+        change_log.find_all.return_value = [changes1, changes2]
+        clean_mock.side_effect = [expected_change1, expected_change2]
+
+        # When
+        result = clean_change_log(change_log)
+
+        # Then
+        self.assertEqual(result, expected_result)
+        change_log.assert_has_calls([
+            call.__bool__(),
+            call.find_parent("h2"),
+            call.__bool__(),
+            call.find_next("ul"),
+            call.__bool__(),
+            call.find_all("li", recursive=False),
+            ])
+        clean_mock.assert_has_calls([
+            call(changes1),
+            call(changes2),
+            ])
+
+
 class UnitToDictTests(unittest.TestCase):
     """ Tests for scrape.wiki.unit_to_dict. """
 
@@ -533,7 +605,7 @@ class UnitToDictTests(unittest.TestCase):
         self.assertEqual(result, expected_result)
         soup_mock.assert_called_once_with(data, "html.parser")
 
-    @patch("punter.scrape.wiki.clean_changes")
+    @patch("punter.scrape.wiki.clean_change_log")
     @patch("punter.scrape.wiki.clean_symbols")
     @patch("punter.scrape.wiki.clean")
     @patch("punter.scrape.wiki.BeautifulSoup")
@@ -547,6 +619,10 @@ class UnitToDictTests(unittest.TestCase):
         image_url = "https://image.url.com"
         panel_url = "https://panel.url.com"
         abilities = ["Ability1. Ability 2"]
+        changes = {
+            "day 1": ["change1", "change2"],
+            "day 2": ["change3"],
+            }
         expected_dict = {
             "name": name,
             "abilities": abilities[-1],
@@ -565,8 +641,6 @@ class UnitToDictTests(unittest.TestCase):
 
         div_box = MagicMock()
         change_log = MagicMock()
-        changes1 = MagicMock(stripped_strings=("day 1",))
-        changes2 = MagicMock(stripped_strings=("day 2",))
         ca_view = MagicMock(a={"href": path})
         thumbimage = {"src": image_url}
         panelimage = {"src": panel_url}
@@ -583,14 +657,7 @@ class UnitToDictTests(unittest.TestCase):
         div_box.return_value = abilities
         symbols_mock.return_value = symbols_mock
         symbols_mock.get_text.return_value = abilities[-1]
-        change_log.return_value = change_log
-        change_log.find_parent.return_value = change_log
-        change_log.find_next.return_value = change_log
-        change_log.find_all.return_value = [changes1, changes2]
-        changes_mock.side_effect = [
-            ["change1", "change2"],
-            ["change3"],
-            ]
+        changes_mock.return_value = changes
 
         # When
         result = unit_to_dict(data)
@@ -607,19 +674,12 @@ class UnitToDictTests(unittest.TestCase):
             call("p > a.image > img"),
             ])
         div_box.assert_called_once_with("div")
-        change_log.assert_has_calls([
-            call.__bool__(),
-            call.find_parent("h2"),
-            call.__bool__(),
-            call.find_next("ul"),
-            call.__bool__(),
-            call.find_all("li", recursive=False),
-            ])
         clean_mock.assert_called_once_with(name)
         symbols_mock.assert_has_calls([
             call(abilities[-1]),
             call.get_text(),
             ])
+        changes_mock.assert_called_once_with(change_log)
 
 
 class FetchUnitsTests(unittest.TestCase):

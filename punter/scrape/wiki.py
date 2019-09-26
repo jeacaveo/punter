@@ -2,7 +2,10 @@
 import csv
 import json
 import os
+import re
 import requests
+
+from datetime import datetime
 
 from bs4 import BeautifulSoup
 
@@ -228,6 +231,41 @@ def clean_changes(item):
     return clean_values
 
 
+def clean_change_log(change_log):
+    """
+    Clean change log element into readable format.
+
+    Parameters
+    ----------
+    change_log: bs4.element.Tag
+        Tag object from BeautifulSoup4 library.
+
+    Returns
+    -------
+    dict
+        Returns list of changes cleaner format.
+
+    Example
+    -------
+    output:
+    {
+        "1984-1-31": ["some change", "another chane"],
+        ...
+    }
+
+    """
+    change_log = change_log and change_log.find_parent("h2")
+    change_log = change_log and change_log.find_next("ul")
+    change_log = change_log and change_log.find_all("li", recursive=False)
+    result = {}
+    for change in change_log or []:
+        day = list(change.stripped_strings)[0]
+        day = re.sub(r"(?<=\d)(st|nd|rd|th)\b", '', day)
+        day = datetime.strptime(day, "%B %d, %Y").date().isoformat()
+        result[day] = clean_changes(change)
+    return result
+
+
 def unit_to_dict(data):
     """
     Parse unit HTML from prismata.gamepedia.com into dict format.
@@ -267,9 +305,6 @@ def unit_to_dict(data):
 
     abilities = soup.select_one("div.box")("div")[-1]
     change_log = soup.select_one("#Change_log")
-    change_log = change_log and change_log.find_parent("h2")
-    change_log = change_log and change_log.find_next("ul")
-    change_log = change_log and change_log.find_all("li", recursive=False)
 
     result = {
         "name": clean(soup.select_one("div.title")),
@@ -277,9 +312,8 @@ def unit_to_dict(data):
             clean_symbols(abilities).get_text().replace("\n", "").split()
             ),
         "change_history": {
-            list(change.stripped_strings)[0]:  # day
-            clean_changes(change)  # changes list
-            for change in change_log or []
+            day: changes
+            for day, changes in clean_change_log(change_log).items()
             },
         "links": {
             "path": soup.select_one("#ca-view").a.get("href"),
