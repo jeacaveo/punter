@@ -9,5 +9,5 @@ PRISMATA_WIKI = {
     # Change BASE_URL to a path to a directory to avoid making http requests
     "BASE_URL": "https://prismata.gamepedia.com",
     "UNITS_PATH": "/Unit",
-    "SAVE_PATH": "scrape/files/wiki",
+    "SAVE_PATH": "punter/scrape/files/wiki",
     }
