@@ -1,7 +1,7 @@
 Punter
 ======
 
-Data scrapper for data related to Prismata (strategy game).
+Library in charge of gathering and cleaning up data related to Prismata (strategy game).
 
 Install as library
 --------------------
