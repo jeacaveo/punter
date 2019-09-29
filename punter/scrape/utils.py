@@ -2,10 +2,12 @@
 from random import uniform
 from time import sleep
 
+from typing import Tuple
+
 from punter.scrape.config import GENERAL
 
 
-def delay(secs=GENERAL["THROTTLING_DELAY"]):
+def delay(secs: Tuple[int, int] = GENERAL["THROTTLING_DELAY"]) -> float:
     """
     Wait for a random amount of time between two numbers (in seconds).
 
@@ -20,6 +22,6 @@ def delay(secs=GENERAL["THROTTLING_DELAY"]):
         Amount of time waited.
 
     """
-    value = uniform(secs[0], secs[1])
+    value: float = uniform(secs[0], secs[1])
     sleep(value)
     return value
