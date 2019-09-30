@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 from typing import (
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -72,7 +73,7 @@ def get_content(path: str, save_file: bool = False) -> str:
     return content
 
 
-def clean(element: bs4_element, cast: Any = str) -> Any:
+def clean(element: bs4_element, cast: Callable[[Any], Any] = str) -> Any:
     """
     Clean item provided.
 
@@ -406,7 +407,7 @@ def export_units_json(
 
 
 def export_units_csv(
-        data: Any,
+        data: Dict[str, MutableMapping[str, Any]],
         file_name: str = "units.csv") -> Tuple[bool, Dict[str, str]]:
     """
     Save data into .csv format/file.
@@ -520,7 +521,8 @@ def export_units_csv(
 
 def fetch_units(
         include: Iterable[str] = ("all"),
-        save_source: bool = False) -> Tuple[bool, Any]:
+        save_source: bool = False
+        ) -> Tuple[bool, Union[Dict[str, str], Dict[str, Dict[str, Any]]]]:
     """
     Get information for Prismata units.
 
@@ -555,7 +557,7 @@ def fetch_units(
         return is_valid, all_units
 
     # Filter out units based on include param
-    units: Any = {
+    units: Dict[str, Any] = {
         key: val
         for key, val in all_units.items()
         if "all" in include or key in include
