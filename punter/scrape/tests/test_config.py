@@ -1,5 +1,4 @@
 """ Test for scrape.config module. """
-import os
 import unittest
 from punter.scrape.config import (
     GENERAL,

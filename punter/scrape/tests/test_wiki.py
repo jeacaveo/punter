@@ -623,45 +623,42 @@ class UnitToDictTests(unittest.TestCase):
         image_url = "https://image.url.com"
         panel_url = "https://panel.url.com"
         abilities = ["Ability1. Ability 2"]
-        changes = {
-            "day 1": ["change1", "change2"],
-            "day 2": ["change3"],
-            }
-        expected_dict = {
-            "name": name,
-            "abilities": abilities[-1],
-            "change_history": {
-                "day 1": ["change1", "change2"],
-                "day 2": ["change3"],
-                },
-            "links": {
-                "path": path,
-                "image": image_url,
-                "panel": panel_url,
-                },
-            "position": "Middle Far Right",
-            }
-        expected_result = True, expected_dict
+        expected_result = (
+            True,
+            {
+                "name": name,
+                "abilities": abilities[-1],
+                "change_history": {
+                    "day 1": ["change1", "change2"],
+                    "day 2": ["change3"],
+                    },
+                "links": {
+                    "path": path,
+                    "image": image_url,
+                    "panel": panel_url,
+                    },
+                "position": "Middle Far Right",
+            })
 
         div_box = MagicMock()
         change_log = MagicMock()
-        ca_view = MagicMock(a={"href": path})
-        thumbimage = {"src": image_url}
-        panelimage = {"src": panel_url}
         soup_mock.return_value = soup_mock
         soup_mock.select_one.side_effect = [
             div_box,
             change_log,
             name,
-            ca_view,
-            thumbimage,
-            panelimage,
+            MagicMock(a={"href": path}),
+            {"src": image_url},
+            {"src": panel_url},
             ]
         clean_mock.return_value = name
         div_box.return_value = abilities
         symbols_mock.return_value = symbols_mock
         symbols_mock.get_text.return_value = abilities[-1]
-        changes_mock.return_value = changes
+        changes_mock.return_value = {
+            "day 1": ["change1", "change2"],
+            "day 2": ["change3"],
+            }
 
         # When
         result = unit_to_dict(data)
@@ -841,7 +838,6 @@ class FetchUnitsTests(unittest.TestCase):
         result = fetch_units()
 
         # Then
-        self.maxDiff = None
         self.assertEqual(result, expected_result)
         content_mock.assert_has_calls([
             call(expected_url, save_file=False),
@@ -911,7 +907,6 @@ class FetchUnitsTests(unittest.TestCase):
         result = fetch_units(include=["unit2"])
 
         # Then
-        self.maxDiff = None
         self.assertEqual(result, expected_result)
         content_mock.assert_has_calls([
             call(expected_url, save_file=False),
