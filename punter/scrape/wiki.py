@@ -3,18 +3,29 @@ import csv
 import json
 import os
 import re
-import requests
-
 from datetime import datetime
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    MutableMapping,
+    Tuple,
+    Union,
+    )
 
-from bs4 import BeautifulSoup
+import requests
+from bs4 import (
+    BeautifulSoup,
+    element as bs4_element,
+    )
 
 from punter.scrape.config import PRISMATA_WIKI
 from punter.scrape.utils import delay
 
 
-# Mapping from symbol titles into str representation
-TITLE_SYMBOL_MAP = {
+# Map symbol titles into str abbreviation
+TITLE_SYMBOL_MAP: Dict[str, str] = {
     "Gold": "",
     "Energy": "E",
     "Green resource": "G",
@@ -25,7 +36,7 @@ TITLE_SYMBOL_MAP = {
     }
 
 
-def get_content(path, save_file=False):
+def get_content(path: str, save_file: bool = False) -> str:
     """
     Get HTML for path.
 
@@ -49,7 +60,7 @@ def get_content(path, save_file=False):
             is_valid = True
     else:
         response = requests.get(path)
-        content = response.content
+        content = str(response.content)
         is_valid = response.status_code == 200
 
     if not is_valid:
@@ -61,7 +72,7 @@ def get_content(path, save_file=False):
     return content
 
 
-def clean(item, cast=str):
+def clean(element: bs4_element, cast: Any = str) -> Any:
     """
     Clean item provided.
 
@@ -78,12 +89,15 @@ def clean(item, cast=str):
         Returns content of Tag of the type from the cast function.
 
     """
-    if item.div:
-        item = item.div
-    return cast(item.text.strip())
+    if element.div:
+        element = element.div
+    return cast(element.text.strip())
 
 
-def unit_table_to_dict(data):
+def unit_table_to_dict(
+        data: str) -> Tuple[
+            bool,
+            Union[Dict[str, str], Dict[str, Dict[str, Union[str, int]]]]]:
     """
     Parse HTML unit table from prismata.gamepedia.com into dict format.
 
@@ -185,7 +199,7 @@ def unit_table_to_dict(data):
     return True, result
 
 
-def clean_symbols(element):
+def clean_symbols(element: bs4_element.Tag) -> bs4_element.Tag:
     """
     Change symbol links into text..
 
@@ -208,7 +222,7 @@ def clean_symbols(element):
     return element
 
 
-def clean_changes(item):
+def clean_changes(element: bs4_element.Tag) -> List[str]:
     """
     Clean changes list into readable format.
 
@@ -224,14 +238,14 @@ def clean_changes(item):
 
     """
     clean_values = []
-    for element in item.ul("li"):
-        element = clean_symbols(element)
-        content = element.get_text().replace("\n", "")
+    for item in element.ul("li"):
+        item = clean_symbols(item)
+        content = item.get_text().replace("\n", "")
         clean_values.append(" ".join(content.split()))
     return clean_values
 
 
-def clean_change_log(change_log):
+def clean_change_log(change_log: bs4_element.Tag) -> Dict[str, List[str]]:
     """
     Clean change log element into readable format.
 
@@ -266,7 +280,8 @@ def clean_change_log(change_log):
     return result
 
 
-def unit_to_dict(data):
+def unit_to_dict(data: str) -> Tuple[
+        bool, Dict[str, Union[str, Dict[str, str], Dict[str, List[str]]]]]:
     """
     Parse unit HTML from prismata.gamepedia.com into dict format.
 
@@ -277,8 +292,7 @@ def unit_to_dict(data):
 
     Returns
     -------
-    dict
-        Unit information
+    bool, dict
 
     Example
     -------
@@ -311,10 +325,7 @@ def unit_to_dict(data):
         "abilities": " ".join(
             clean_symbols(abilities).get_text().replace("\n", "").split()
             ),
-        "change_history": {
-            day: changes
-            for day, changes in clean_change_log(change_log).items()
-            },
+        "change_history": clean_change_log(change_log),
         "links": {
             "path": soup.select_one("#ca-view").a.get("href"),
             "image": (soup.select_one(".thumbimage") or {}).get("src"),
@@ -325,7 +336,9 @@ def unit_to_dict(data):
     return True, result
 
 
-def export_units_json(data, file_name="units.json"):
+def export_units_json(
+        data: Dict[str, Dict[str, Union[str, int]]],
+        file_name: str = "units.json") -> Tuple[bool, Dict[str, str]]:
     """
     Save data into .json format/file.
 
@@ -392,7 +405,9 @@ def export_units_json(data, file_name="units.json"):
     return True, {"message": "Success"}
 
 
-def export_units_csv(data, file_name="units.csv"):
+def export_units_csv(
+        data: Any,
+        file_name: str = "units.csv") -> Tuple[bool, Dict[str, str]]:
     """
     Save data into .csv format/file.
 
@@ -464,8 +479,8 @@ def export_units_csv(data, file_name="units.csv"):
     """
     try:
         flat_data_list = []
-        for key, val in data.items():
-            unit = {}
+        for _, val in data.items():
+            unit: MutableMapping[str, Union[str, int]] = {}
             unit.update(val.pop("attributes"))
             unit.update(val.pop("costs"))
             unit.update(val.pop("links"))
@@ -503,7 +518,9 @@ def export_units_csv(data, file_name="units.csv"):
     return True, {"message": "Success"}
 
 
-def fetch_units(include=["all"], save_source=False):
+def fetch_units(
+        include: Iterable[str] = ("all"),
+        save_source: bool = False) -> Tuple[bool, Any]:
     """
     Get information for Prismata units.
 
@@ -538,14 +555,14 @@ def fetch_units(include=["all"], save_source=False):
         return is_valid, all_units
 
     # Filter out units based on include param
-    all_units = {
+    units: Any = {
         key: val
         for key, val in all_units.items()
         if "all" in include or key in include
         }
 
     # Get details for each unit
-    for name, value in all_units.items():
+    for _, value in units.items():
         delay()
         content = get_content(
             f"{base_url}{value['links']['path']}", save_file=save_source)
@@ -557,4 +574,4 @@ def fetch_units(include=["all"], save_source=False):
                     value[key].update(unit_detail.pop(key))
             value.update(unit_detail)
 
-    return is_valid, all_units
+    return is_valid, units
