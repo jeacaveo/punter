@@ -23,8 +23,8 @@ from punter.scrape.wiki import (
     )
 
 
-class GetContentTests(unittest.TestCase):
-    """ Tests for scrape.wiki.get_content. """
+class GetContentDirtyTests(unittest.TestCase):
+    """ Tests for error cases for scrape.wiki.get_content. """
 
     @patch("punter.scrape.wiki.requests.get")
     def test_error(self, requests_mock):
@@ -41,6 +41,10 @@ class GetContentTests(unittest.TestCase):
         # Then
         self.assertEqual(result, expected_result)
         requests_mock.assert_called_once_with(url)
+
+
+class GetContentCleanTests(unittest.TestCase):
+    """ Tests for success cases for scrape.wiki.get_content. """
 
     @patch("punter.scrape.wiki.requests.get")
     def test_success(self, requests_mock):
@@ -125,8 +129,8 @@ class GetContentTests(unittest.TestCase):
         file_mock.read.assert_called_once_with()
 
 
-class CleanTests(unittest.TestCase):
-    """ Tests for scrape.wiki.clean. """
+class CleanCleanTests(unittest.TestCase):
+    """ Tests for success cases for scrape.wiki.clean. """
 
     def test_div(self):
         """ Tests result when input data has a div value. """
@@ -153,8 +157,8 @@ class CleanTests(unittest.TestCase):
         self.assertEqual(result, expected_result)
 
 
-class UnitTableToDictTests(unittest.TestCase):
-    """ Tests for scrape.wiki.unit_table_to_dict. """
+class UnitTableToDictDirtyTests(unittest.TestCase):
+    """ Tests error cases for scrape.wiki.unit_table_to_dict. """
 
     @patch("punter.scrape.wiki.BeautifulSoup")
     def test_invalid_input_format(self, soup_mock):
@@ -171,6 +175,10 @@ class UnitTableToDictTests(unittest.TestCase):
         # Then
         self.assertEqual(result, expected_result)
         soup_mock.assert_called_once_with(data, "html.parser")
+
+
+class UnitTableToDictCleanTests(unittest.TestCase):
+    """ Tests success cases for scrape.wiki.unit_table_to_dict. """
 
     @patch("punter.scrape.wiki.BeautifulSoup")
     def test_empty_rows(self, soup_mock):
@@ -294,8 +302,8 @@ class UnitTableToDictTests(unittest.TestCase):
         clean_mock.assert_has_calls([])
 
 
-class ExportUnitsJsonTests(unittest.TestCase):
-    """ Tests for scrape.wiki.export_units_json. """
+class ExportUnitsJsonCleanTests(unittest.TestCase):
+    """ Tests success cases for scrape.wiki.export_units_json. """
 
     def setUp(self):
         self.file_name = "units.json.test"
@@ -356,8 +364,8 @@ class ExportUnitsJsonTests(unittest.TestCase):
             ])
 
 
-class ExportUnitsCsvTests(unittest.TestCase):
-    """ Tests for scrape.wiki.export_units_csv. """
+class ExportUnitsCsvDirtyTests(unittest.TestCase):
+    """ Tests error cases for scrape.wiki.export_units_csv. """
 
     def setUp(self):
         self.file_name = "units.csv.test"
@@ -391,6 +399,17 @@ class ExportUnitsCsvTests(unittest.TestCase):
         # Then
         self.assertEqual(result, expected_result)
         self.assertFalse(os.path.isfile(self.file_name))
+
+
+class ExportUnitsCsvCleanTests(unittest.TestCase):
+    """ Tests success cases for scrape.wiki.export_units_csv. """
+
+    def setUp(self):
+        self.file_name = "units.csv.test"
+
+    def tearDown(self):
+        if os.path.isfile(self.file_name):
+            os.remove(self.file_name)
 
     def test_success(self):
         """ Tests csv file is saved when valid format is provided. """
@@ -441,8 +460,8 @@ class ExportUnitsCsvTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(self.file_name))
 
 
-class CleanSymbolsTests(unittest.TestCase):
-    """ Tests for scrape.wiki.clean_symbols. """
+class CleanSymbolsCleanTests(unittest.TestCase):
+    """ Tests success cases for scrape.wiki.clean_symbols. """
 
     def test_no_links(self):
         """ Tests result when input data has no links (a tag). """
@@ -479,8 +498,8 @@ class CleanSymbolsTests(unittest.TestCase):
         icon_obj.replace_with.assert_called_once_with("X")
 
 
-class CleanChangesTests(unittest.TestCase):
-    """ Tests for scrape.wiki.clean_changes. """
+class CleanChangesCleanTests(unittest.TestCase):
+    """ Tests success cases for scrape.wiki.clean_changes. """
 
     def test_no_changes(self):
         """ Tests result when input data has no changes. """
@@ -519,8 +538,8 @@ class CleanChangesTests(unittest.TestCase):
         element_obj.get_text.assert_called_once_with()
 
 
-class CleanChangeLogTests(unittest.TestCase):
-    """ Tests for scrape.wiki.clean_change_log. """
+class CleanChangeLogCleanTests(unittest.TestCase):
+    """ Tests success cases for scrape.wiki.clean_change_log. """
 
     def test_no_changes(self):
         """ Tests result when data provided has no changes. """
@@ -590,8 +609,8 @@ class CleanChangeLogTests(unittest.TestCase):
             ])
 
 
-class UnitToDictTests(unittest.TestCase):
-    """ Tests for scrape.wiki.unit_to_dict. """
+class UnitToDictDirtyTests(unittest.TestCase):
+    """ Tests error cases for scrape.wiki.unit_to_dict. """
 
     @patch("punter.scrape.wiki.BeautifulSoup")
     def test_invalid_input_format(self, soup_mock):
@@ -608,6 +627,10 @@ class UnitToDictTests(unittest.TestCase):
         # Then
         self.assertEqual(result, expected_result)
         soup_mock.assert_called_once_with(data, "html.parser")
+
+
+class UnitToDictCleanTests(unittest.TestCase):
+    """ Tests success cases for scrape.wiki.unit_to_dict. """
 
     @patch("punter.scrape.wiki.clean_change_log")
     @patch("punter.scrape.wiki.clean_symbols")
@@ -683,8 +706,8 @@ class UnitToDictTests(unittest.TestCase):
         changes_mock.assert_called_once_with(change_log)
 
 
-class FetchUnitsTests(unittest.TestCase):
-    """ Tests for scrape.wiki.fetch_units. """
+class FetchUnitsDirtyTests(unittest.TestCase):
+    """ Tests error cases for scrape.wiki.fetch_units. """
 
     def setUp(self):
         self.base_url = config.PRISMATA_WIKI["BASE_URL"]
@@ -724,6 +747,13 @@ class FetchUnitsTests(unittest.TestCase):
         self.assertEqual(result, expected_result)
         content_mock.assert_called_once_with(expected_url, save_file=False)
         table_mock.assert_called_once_with(expected_data)
+
+
+class FetchUnitsCleanTests(unittest.TestCase):
+    """ Tests success cases for scrape.wiki.fetch_units. """
+
+    def setUp(self):
+        self.base_url = config.PRISMATA_WIKI["BASE_URL"]
 
     @patch("punter.scrape.wiki.unit_to_dict")
     @patch("punter.scrape.wiki.delay")

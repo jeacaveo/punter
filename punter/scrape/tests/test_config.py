@@ -6,7 +6,7 @@ from punter.scrape.config import (
     )
 
 
-class VariablesTests(unittest.TestCase):
+class VariablesCleanTests(unittest.TestCase):
     """ Tests for scrape.config variables. """
 
     def test_general_variables(self):

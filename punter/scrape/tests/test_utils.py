@@ -9,8 +9,8 @@ from punter.scrape.utils import (
     )
 
 
-class DelayTests(unittest.TestCase):
-    """ Tests for scrape.utils.delay function. """
+class DelayCleanTests(unittest.TestCase):
+    """ Tests for successful calls to scrape.utils.delay function. """
 
     @patch("punter.scrape.utils.sleep")
     @patch("punter.scrape.utils.uniform")
