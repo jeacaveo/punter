@@ -1,0 +1,18 @@
+image: "python:3.7"
+
+before_script:
+    - pip install -r requirements-dev.txt
+
+stages:
+    - test
+    - lint
+
+testing:
+    stage: test
+    script:
+        - ./runtests.sh
+
+linting:
+    stage: lint
+    script:
+        - ./runlinters.sh
