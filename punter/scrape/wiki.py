@@ -92,7 +92,9 @@ def clean(element: bs4_element, cast: Callable[[Any], Any] = str) -> Any:
     """
     if element.div:
         element = element.div
-    return cast(element.text.strip())
+    # element.img is for fields that only contain an image and no text
+    value = element.img or element.text.strip()
+    return cast(value)
 
 
 def unit_table_to_dict(

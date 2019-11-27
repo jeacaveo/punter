@@ -135,7 +135,7 @@ class CleanCleanTests(unittest.TestCase):
     def test_div(self):
         """ Tests result when input data has a div value. """
         # Given
-        data = MagicMock(div=MagicMock(text="abc"))
+        data = MagicMock(div=MagicMock(text="abc", img=None))
         expected_result = "abc"
 
         # When
@@ -147,11 +147,23 @@ class CleanCleanTests(unittest.TestCase):
     def test_int(self):
         """ Tests result when input data is a string number. """
         # Given
-        data = MagicMock(div=None, text=" \n 999 \n ")
+        data = MagicMock(div=None, text=" \n 999 \n ", img=None)
         expected_result = 999
 
         # When
         result = clean(data, int)
+
+        # Then
+        self.assertEqual(result, expected_result)
+
+    def test_img(self):
+        """ Tests result when input data has an img tag. """
+        # Given
+        data = MagicMock(div=None, img="some image")
+        expected_result = True
+
+        # When
+        result = clean(data, bool)
 
         # Then
         self.assertEqual(result, expected_result)
