@@ -10,6 +10,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Mapping,
     MutableMapping,
     Union,
     )
@@ -96,7 +97,8 @@ def clean(element: bs4_element, cast: Callable[[Any], Any] = str) -> Any:
     return cast(value)
 
 
-def unit_table_to_dict(data: str) -> Dict[str, Dict[str, Union[str, int]]]:
+def unit_table_to_dict(
+        data: str) -> Dict[str, Dict[str, Union[Dict[str, int], str, int]]]:
     """
     Parse HTML unit table from prismata.gamepedia.com into dict format.
 
@@ -150,7 +152,7 @@ def unit_table_to_dict(data: str) -> Dict[str, Dict[str, Union[str, int]]]:
 
     """
     soup = BeautifulSoup(data, "html.parser")
-    table = (soup.table and soup.table("tr")) or []
+    table = soup.table("tr") if soup.table else []
 
     return {
         clean(unit[0]): {  # unit name
@@ -184,8 +186,10 @@ def unit_table_to_dict(data: str) -> Dict[str, Dict[str, Union[str, int]]]:
             "type": clean(unit[1], int),
             "unit_spell": clean(unit[2]),
             }
-        for unit in map(lambda row: row("td"), table)
+        for unit in map(lambda row: row("td"), table)  # type: ignore
         if unit
+        # Ignoring typing in map, all uses of the clean function return Any
+        # This means that it can't match the return types for this function
         }
 
 
@@ -392,8 +396,9 @@ def export_units_json(
 
 
 def export_units_csv(
-        data: Dict[str, MutableMapping[str, Any]],
-        file_name: str = "units.csv") -> Dict[str, str]:
+        data: Dict[str, MutableMapping[str, Mapping[str, Iterable[str]]]],
+        file_name: str = "units.csv"
+        ) -> Dict[str, str]:
     """
     Save data into .csv format/file.
 
@@ -466,7 +471,7 @@ def export_units_csv(
     try:
         flat_data_list = []
         for _, val in data.items():
-            unit: MutableMapping[str, Union[str, int]] = {}
+            unit: MutableMapping[str, Any] = {}
             unit.update(val.pop("attributes"))
             unit.update(val.pop("costs"))
             unit.update(val.pop("links"))
@@ -506,7 +511,7 @@ def export_units_csv(
 
 def fetch_units(
         include: Iterable[str] = ("all"), save_source: bool = False
-        ) -> Dict[str, Dict[str, Any]]:
+        ) -> Dict[str, Dict[str, Union[Dict[str, int], List[str], str, int]]]:
     """
     Get information for Prismata units.
 
