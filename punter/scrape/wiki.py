@@ -11,7 +11,6 @@ from typing import (
     Iterable,
     List,
     MutableMapping,
-    Tuple,
     Union,
     )
 
@@ -97,10 +96,7 @@ def clean(element: bs4_element, cast: Callable[[Any], Any] = str) -> Any:
     return cast(value)
 
 
-def unit_table_to_dict(
-        data: str) -> Tuple[
-            bool,
-            Union[Dict[str, str], Dict[str, Dict[str, Union[str, int]]]]]:
+def unit_table_to_dict(data: str) -> Dict[str, Dict[str, Union[str, int]]]:
     """
     Parse HTML unit table from prismata.gamepedia.com into dict format.
 
@@ -111,7 +107,7 @@ def unit_table_to_dict(
 
     Returns
     -------
-    tuple(bool, dict)
+    dict
 
     Example
     -------
@@ -152,16 +148,11 @@ def unit_table_to_dict(
             ...
         }
 
-    Example
-    -------
-    False, {"message": "Error message"}
-    True, {output}
-
     """
     soup = BeautifulSoup(data, "html.parser")
 
     if not soup:
-        return False, {"message": "Invalid format."}
+        return {}
 
     result = {}
     for row in soup.table("tr"):
@@ -199,7 +190,7 @@ def unit_table_to_dict(
                 "type": clean(unit[1], int),
                 "unit_spell": clean(unit[2]),
                 }
-    return True, result
+    return result
 
 
 def clean_symbols(element: bs4_element.Tag) -> bs4_element.Tag:
@@ -283,8 +274,7 @@ def clean_change_log(change_log: bs4_element.Tag) -> Dict[str, List[str]]:
     return result
 
 
-def unit_to_dict(data: str) -> Tuple[
-        bool, Dict[str, Union[str, Dict[str, str], Dict[str, List[str]]]]]:
+def unit_to_dict(data: str) -> Dict[str, Dict[str, List[str]]]:
     """
     Parse unit HTML from prismata.gamepedia.com into dict format.
 
@@ -295,7 +285,7 @@ def unit_to_dict(data: str) -> Tuple[
 
     Returns
     -------
-    bool, dict
+    dict
 
     Example
     -------
@@ -318,7 +308,7 @@ def unit_to_dict(data: str) -> Tuple[
     """
     soup = BeautifulSoup(data, "html.parser")
     if not soup:
-        return False, {"message": "Invalid format."}
+        return {}
 
     abilities = soup.select_one("div.box")("div")[-1]
     change_log = soup.select_one("#Change_log")
@@ -336,12 +326,13 @@ def unit_to_dict(data: str) -> Tuple[
             },
         "position": "Middle Far Right",
         }
-    return True, result
+    return result
 
 
 def export_units_json(
         data: Dict[str, Dict[str, Union[str, int]]],
-        file_name: str = "units.json") -> Tuple[bool, Dict[str, str]]:
+        file_name: str = "units.json"
+        ) -> Dict[str, str]:
     """
     Save data into .json format/file.
 
@@ -354,7 +345,7 @@ def export_units_json(
 
     Returns
     -------
-    tuple(bool, dict)
+    dict
 
     Example
     -------
@@ -395,22 +386,18 @@ def export_units_json(
             ...
         }
 
-    output:
-    False, {"message": "Error message"}
-    True, {"message": "Success message"}
-
     """
     data_json = json.dumps(
         data, sort_keys=True, indent=4, separators=(",", ": "))
 
     with open(file_name, "w") as out_file:
         out_file.write(data_json)
-    return True, {"message": "Success"}
+    return {"message": "Success"}
 
 
 def export_units_csv(
         data: Dict[str, MutableMapping[str, Any]],
-        file_name: str = "units.csv") -> Tuple[bool, Dict[str, str]]:
+        file_name: str = "units.csv") -> Dict[str, str]:
     """
     Save data into .csv format/file.
 
@@ -423,7 +410,7 @@ def export_units_csv(
 
     Returns
     -------
-    tuple(bool, dict)
+    dict
 
     Example
     -------
@@ -515,16 +502,15 @@ def export_units_csv(
             for unit in flat_data_list:
                 writer.writerow(unit)
     except AttributeError:
-        return False, {"message": "Invalid format (nested data)."}
+        return {"message": "Invalid format (nested data)."}
     except KeyError:
-        return False, {"message": "Invalid format (missing key)."}
-    return True, {"message": "Success"}
+        return {"message": "Invalid format (missing key)."}
+    return {"message": "Success"}
 
 
 def fetch_units(
-        include: Iterable[str] = ("all"),
-        save_source: bool = False
-        ) -> Tuple[bool, Union[Dict[str, str], Dict[str, Dict[str, Any]]]]:
+        include: Iterable[str] = ("all"), save_source: bool = False
+        ) -> Dict[str, Dict[str, Any]]:
     """
     Get information for Prismata units.
 
@@ -542,7 +528,7 @@ def fetch_units(
 
     Returns
     -------
-    tuple(bool, dict):
+    dict:
         HTML content.
 
     """
@@ -552,16 +538,12 @@ def fetch_units(
     content = get_content(
         f"{base_url}{PRISMATA_WIKI['UNITS_PATH']}", save_file=save_source)
     if not content:
-        return False, {"message": "Invalid URL configuration."}
-
-    is_valid, all_units = unit_table_to_dict(content)
-    if not is_valid:
-        return is_valid, all_units
+        return {}
 
     # Filter out units based on include param
     units: Dict[str, Any] = {
         key: val
-        for key, val in all_units.items()
+        for key, val in unit_table_to_dict(content).items()
         if "all" in include or key in include
         }
 
@@ -570,12 +552,11 @@ def fetch_units(
         delay()
         content = get_content(
             f"{base_url}{value['links']['path']}", save_file=save_source)
-        valid_detail, unit_detail = unit_to_dict(content)
-        if valid_detail:
-            # Flatten nested dicts (only one level)
-            for key in set(value.keys()).intersection(unit_detail.keys()):
-                if isinstance(unit_detail[key], dict):
-                    value[key].update(unit_detail.pop(key))
-            value.update(unit_detail)
+        unit_detail = unit_to_dict(content)
+        # Flatten nested dicts (only one level)
+        for key in set(value.keys()).intersection(unit_detail.keys()):
+            if isinstance(unit_detail[key], dict):
+                value[key].update(unit_detail.pop(key))
+        value.update(unit_detail)
 
-    return is_valid, units
+    return units

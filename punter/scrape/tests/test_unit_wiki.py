@@ -177,7 +177,7 @@ class UnitTableToDictDirtyTests(unittest.TestCase):
         """ Tests result when input data has invalid format. """
         # Given
         data = ""
-        expected_result = False, {"message": "Invalid format."}
+        expected_result = {}
 
         soup_mock.return_value = None
 
@@ -198,7 +198,7 @@ class UnitTableToDictCleanTests(unittest.TestCase):
         # Given
         data = "<html><table></table></html>"
         expected_dict = {}
-        expected_result = True, expected_dict
+        expected_result = expected_dict
 
         row_mock = MagicMock()
         soup_mock.return_value = MagicMock()
@@ -253,7 +253,7 @@ class UnitTableToDictCleanTests(unittest.TestCase):
                 "unit_spell": "unit/spell",
                 }
             }
-        expected_result = True, expected_dict
+        expected_result = expected_dict
 
         row_mock = MagicMock()
         soup_mock.return_value = MagicMock()
@@ -359,7 +359,7 @@ class ExportUnitsJsonCleanTests(unittest.TestCase):
             }
         json_data = json.dumps(
             data, sort_keys=True, indent=4, separators=(",", ": "))
-        expected_result = True, {"message": "Success"}
+        expected_result = {"message": "Success"}
 
         open_mock.return_value = open_mock
 
@@ -390,7 +390,7 @@ class ExportUnitsCsvDirtyTests(unittest.TestCase):
         """ Tests error when invalid data format is provided. """
         # Given
         data = {"bad": "wrong"}
-        expected_result = False, {"message": "Invalid format (nested data)."}
+        expected_result = {"message": "Invalid format (nested data)."}
 
         # When
         result = export_units_csv(data, file_name=self.file_name)
@@ -403,7 +403,7 @@ class ExportUnitsCsvDirtyTests(unittest.TestCase):
         """ Tests error when invalid data format is provided. """
         # Given
         data = {"bad": {}}
-        expected_result = False, {"message": "Invalid format (missing key)."}
+        expected_result = {"message": "Invalid format (missing key)."}
 
         # When
         result = export_units_csv(data, file_name=self.file_name)
@@ -462,7 +462,7 @@ class ExportUnitsCsvCleanTests(unittest.TestCase):
                     },
                 }
             }
-        expected_result = True, {"message": "Success"}
+        expected_result = {"message": "Success"}
 
         # When
         result = export_units_csv(data, file_name=self.file_name)
@@ -629,7 +629,7 @@ class UnitToDictDirtyTests(unittest.TestCase):
         """ Tests result when input data has invalid format. """
         # Given
         data = ""
-        expected_result = False, {"message": "Invalid format."}
+        expected_result = {}
 
         soup_mock.return_value = None
 
@@ -658,22 +658,20 @@ class UnitToDictCleanTests(unittest.TestCase):
         image_url = "https://image.url.com"
         panel_url = "https://panel.url.com"
         abilities = ["Ability1. Ability 2"]
-        expected_result = (
-            True,
-            {
-                "name": name,
-                "abilities": abilities[-1],
-                "change_history": {
-                    "day 1": ["change1", "change2"],
-                    "day 2": ["change3"],
-                    },
-                "links": {
-                    "path": path,
-                    "image": image_url,
-                    "panel": panel_url,
-                    },
-                "position": "Middle Far Right",
-            })
+        expected_result = {
+            "name": name,
+            "abilities": abilities[-1],
+            "change_history": {
+                "day 1": ["change1", "change2"],
+                "day 2": ["change3"],
+                },
+            "links": {
+                "path": path,
+                "image": image_url,
+                "panel": panel_url,
+                },
+            "position": "Middle Far Right",
+            }
 
         div_box = MagicMock()
         change_log = MagicMock()
@@ -729,7 +727,7 @@ class FetchUnitsDirtyTests(unittest.TestCase):
         """ Tests invalid URL configuration. """
         # Given
         expected_url = f"{self.base_url}{config.PRISMATA_WIKI['UNITS_PATH']}"
-        expected_result = False, {"message": "Invalid URL configuration."}
+        expected_result = {}
 
         content_mock.return_value = ""
 
@@ -742,12 +740,12 @@ class FetchUnitsDirtyTests(unittest.TestCase):
 
     @patch("punter.scrape.wiki.unit_table_to_dict")
     @patch("punter.scrape.wiki.get_content")
-    def test_invalid_html_all_units(self, content_mock, table_mock):
-        """ Tests invalid HTML fetch for all units. """
+    def test_no_units(self, content_mock, table_mock):
+        """ Tests fetch for all units returns nothing. """
         # Given
         expected_url = f"{self.base_url}{config.PRISMATA_WIKI['UNITS_PATH']}"
         expected_data = "invalid content"
-        expected_result = False, {"message": "error"}
+        expected_result = {}
 
         content_mock.return_value = expected_data
         table_mock.return_value = expected_result
@@ -780,18 +778,15 @@ class FetchUnitsCleanTests(unittest.TestCase):
             "unit1": {"key1": "val1", "links": {"path": "/unit1"}},
             "unit2": {"key3": "val3", "links": {"path": "/unit2"}},
             }
-        expected_result = True, expected_data
+        expected_result = expected_data
 
         content_mock.side_effect = [
             expected_raw_data,
             "",
             "",
             ]
-        table_mock.return_value = True, expected_data
-        unit_mock.side_effect = [
-            (False, {}),
-            (False, {}),
-            ]
+        table_mock.return_value = expected_data
+        unit_mock.side_effect = [{}, {}]
 
         # When
         result = fetch_units()
@@ -863,18 +858,15 @@ class FetchUnitsCleanTests(unittest.TestCase):
                 "keyZ": "extra val 2",
                 },
             }
-        expected_result = True, expected_data
+        expected_result = expected_data
 
         content_mock.side_effect = [
             expected_raw_table,
             expected_raw_unit1,
             expected_raw_unit2,
             ]
-        table_mock.return_value = True, expected_table_data
-        unit_mock.side_effect = [
-            (True, expected_unit1),
-            (True, expected_unit2),
-            ]
+        table_mock.return_value = expected_table_data
+        unit_mock.side_effect = [expected_unit1, expected_unit2]
 
         # When
         result = fetch_units()
@@ -934,16 +926,14 @@ class FetchUnitsCleanTests(unittest.TestCase):
                 "keyZ": "extra val 2",
                 },
             }
-        expected_result = True, expected_data
+        expected_result = expected_data
 
         content_mock.side_effect = [
             expected_raw_table,
             expected_raw_unit1,
             ]
-        table_mock.return_value = True, expected_table_data
-        unit_mock.side_effect = [
-            (True, expected_unit1),
-            ]
+        table_mock.return_value = expected_table_data
+        unit_mock.side_effect = [expected_unit1]
 
         # When
         result = fetch_units(include=["unit2"])
