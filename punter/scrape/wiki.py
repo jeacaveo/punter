@@ -150,47 +150,43 @@ def unit_table_to_dict(data: str) -> Dict[str, Dict[str, Union[str, int]]]:
 
     """
     soup = BeautifulSoup(data, "html.parser")
+    table = (soup.table and soup.table("tr")) or []
 
-    if not soup:
-        return {}
-
-    result = {}
-    for row in soup.table("tr"):
-        unit = row("td")
-        if unit:
-            name = clean(unit[0])
-            result[name] = {
-                "name": name,
-                "costs": {
-                    "gold": clean(unit[3], int),
-                    "energy": clean(unit[4], int),
-                    "green": clean(unit[5], int),
-                    "blue": clean(unit[6], int),
-                    "red": clean(unit[7], int),
-                    },
-                "stats": {
-                    "attack": int(clean(unit[15]) or 0),
-                    "health": clean(unit[10], int),
-                    },
-                "attributes": {
-                    "supply": clean(unit[8], int),
-                    "frontline": clean(unit[11], bool),
-                    "fragile": clean(unit[12], bool),
-                    "blocker": clean(unit[13], bool),
-                    "prompt": clean(unit[14], bool),
-                    "stamina": clean(unit[16], int),
-                    "lifespan": clean(unit[19], int),
-                    "build_time": clean(unit[9], int),
-                    "exhaust_turn": clean(unit[17], int),
-                    "exhaust_ability": clean(unit[18], int),
-                    },
-                "links": {
-                    "path": unit[0].a.get("href"),
-                    },
-                "type": clean(unit[1], int),
-                "unit_spell": clean(unit[2]),
-                }
-    return result
+    return {
+        clean(unit[0]): {  # unit name
+            "name": clean(unit[0]),
+            "costs": {
+                "gold": clean(unit[3], int),
+                "energy": clean(unit[4], int),
+                "green": clean(unit[5], int),
+                "blue": clean(unit[6], int),
+                "red": clean(unit[7], int),
+                },
+            "stats": {
+                "attack": int(clean(unit[15]) or 0),
+                "health": clean(unit[10], int),
+                },
+            "attributes": {
+                "supply": clean(unit[8], int),
+                "frontline": clean(unit[11], bool),
+                "fragile": clean(unit[12], bool),
+                "blocker": clean(unit[13], bool),
+                "prompt": clean(unit[14], bool),
+                "stamina": clean(unit[16], int),
+                "lifespan": clean(unit[19], int),
+                "build_time": clean(unit[9], int),
+                "exhaust_turn": clean(unit[17], int),
+                "exhaust_ability": clean(unit[18], int),
+                },
+            "links": {
+                "path": unit[0].a.get("href"),
+                },
+            "type": clean(unit[1], int),
+            "unit_spell": clean(unit[2]),
+            }
+        for unit in map(lambda row: row("td"), table)
+        if unit
+        }
 
 
 def clean_symbols(element: bs4_element.Tag) -> bs4_element.Tag:

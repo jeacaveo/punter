@@ -179,7 +179,7 @@ class UnitTableToDictDirtyTests(unittest.TestCase):
         data = ""
         expected_result = {}
 
-        soup_mock.return_value = None
+        soup_mock.return_value = MagicMock(table=None)
 
         # When
         result = unit_table_to_dict(data)
@@ -301,6 +301,7 @@ class UnitTableToDictCleanTests(unittest.TestCase):
             18,
             1,
             "unit/spell",
+            "name",
             ]
 
         # When
