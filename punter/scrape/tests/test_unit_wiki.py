@@ -1,5 +1,6 @@
 """ Test for scrape.wiki module. """
 import json
+import logging
 import os
 import unittest
 from mock import (
@@ -21,6 +22,9 @@ from punter.scrape.wiki import (
     unit_to_dict,
     unit_table_to_dict,
     )
+
+
+logging.disable()
 
 
 class GetContentDirtyTests(unittest.TestCase):

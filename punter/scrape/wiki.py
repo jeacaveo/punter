@@ -21,7 +21,10 @@ from bs4 import (
     element as bs4_element,
     )
 
-from punter.scrape.config import PRISMATA_WIKI
+from punter.scrape.config import (
+    LOGGER as logger,
+    PRISMATA_WIKI,
+    )
 from punter.scrape.utils import delay
 
 
@@ -308,6 +311,7 @@ def unit_to_dict(data: str) -> Dict[str, Dict[str, List[str]]]:
     """
     soup = BeautifulSoup(data, "html.parser")
     if not soup:
+        logger.warning("Invalid data format for unit: %s", data)
         return {}
 
     abilities = soup.select_one("div.box")("div")[-1]
@@ -326,6 +330,8 @@ def unit_to_dict(data: str) -> Dict[str, Dict[str, List[str]]]:
             },
         "position": "Middle Far Right",
         }
+
+    logger.info("Unit processed: %s", result['name'])
     return result
 
 
@@ -392,6 +398,8 @@ def export_units_json(
 
     with open(file_name, "w") as out_file:
         out_file.write(data_json)
+
+    logger.info("Data exported to (JSON): %s", file_name)
     return {"message": "Success"}
 
 
@@ -503,14 +511,20 @@ def export_units_csv(
             for unit in flat_data_list:
                 writer.writerow(unit)
     except AttributeError:
-        return {"message": "Invalid format (nested data)."}
+        message = "Invalid format (nested data)."
+        logger.error("Error exporting CSV: %s", message)
+        return {"message": message}
     except KeyError:
-        return {"message": "Invalid format (missing key)."}
+        message = "Invalid format (missing key)."
+        logger.error("Error exporting CSV: %s", message)
+        return {"message": message}
+
+    logger.info("Data exported to (CSV): %s", file_name)
     return {"message": "Success"}
 
 
 def fetch_units(
-        include: Iterable[str] = ("all"), save_source: bool = False
+        include: Iterable[str] = ("all",), save_source: bool = False
         ) -> Dict[str, Dict[str, Union[Dict[str, int], List[str], str, int]]]:
     """
     Get information for Prismata units.
@@ -535,11 +549,13 @@ def fetch_units(
     """
     base_url = PRISMATA_WIKI["BASE_URL"]
 
+    logger.info(
+        "Fetching\nFrom: %s\nUnits: %s\nSaving sources? %s\n",
+        base_url, ','.join(include), save_source)
+
     # Get general information for all units
     content = get_content(
         f"{base_url}{PRISMATA_WIKI['UNITS_PATH']}", save_file=save_source)
-    if not content:
-        return {}
 
     # Filter out units based on include param
     units: Dict[str, Any] = {
@@ -560,4 +576,5 @@ def fetch_units(
                 value[key].update(unit_detail.pop(key))
         value.update(unit_detail)
 
+    logger.info("Total units fetched: %s", len(units))
     return units
