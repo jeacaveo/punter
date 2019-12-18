@@ -20,7 +20,7 @@ class VariablesCleanTests(unittest.TestCase):
     def test_pw_variables(self):
         """ Tests variables for PRISMATA_WIKI. """
         # Given
-        expected_base_url = "https://prismata.gamepedia.com"
+        expected_base_url = "punter/scrape/files/wiki"
         expepcted_units_path = "/Unit"
         expepcted_save_path = "punter/scrape/files/wiki"
 
